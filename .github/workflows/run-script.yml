@@ -16,7 +16,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
-        
+
+      - name: dependencies
+        run: npm ci
       - name: Run scraper script
         run: |
           echo ":rocket: Running with URL: ${{ inputs.arg1 }}"
