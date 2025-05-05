@@ -1,0 +1,25 @@
+name: Run Scraper Script
+on:
+  workflow_dispatch:
+    inputs:
+      arg1:
+        description: 'Lesson URL to scrape'
+        required: true
+        type: string
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    env:
+      # Optional secure injection from GitHub Secrets
+      SECURE_HEADER_NAME: cf_bp
+      SECURE_HEADER_VALUE: ${{ secrets.CF_BP_TOKEN }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        
+      - name: Run scraper script
+        run: |
+          echo ":rocket: Running with URL: ${{ inputs.arg1 }}"
+          OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}")
+          echo "$OUTPUT" > lesson_output.md
+          echo "output=$OUTPUT" >> $GITHUB_OUTPUT
