@@ -1,12 +1,8 @@
 import puppeteer from 'puppeteer';
-import usePlugin from 'puppeteer-extra-plugin-stealth';
 import { readFile, writeFile } from 'fs/promises';
 import { JSDOM } from 'jsdom';
 import TurndownService from 'turndown';
 import fetch from 'node-fetch';
-
-const puppeteerExtra = require('puppeteer-extra');
-puppeteerExtra.use(usePlugin());
 
 async function loadHeaders() {
   try {
@@ -294,8 +290,7 @@ async function fetchLessonAndParse(url) {
 
 async function fetchJsonWithPuppeteer(url, headers, fileName) {
   //const browser = await puppeteer.launch({ headless: true });
-  const browser = await puppeteerExtra.launch({
-  executablePath: puppeteer.executablePath(),
+  const browser = await puppeteer.launch({
   headless: 'new', // or true/false depending on version
   args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
@@ -318,8 +313,7 @@ async function scrapeWithAuth(url) {
   const headers = await loadHeaders();
 
   //const browser = await puppeteer.launch({ headless: true });
-  const browser = await puppeteerExtra.launch({
-  executablePath: puppeteer.executablePath(),
+  const browser = await puppeteer.launch({
   headless: 'new', // or true/false depending on version
   args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
