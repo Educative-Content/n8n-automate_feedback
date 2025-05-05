@@ -27,6 +27,15 @@ jobs:
 
       - name: dependencies
         run: npm ci
+
+      - name: 💾 Save updated cache
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/puppeteer
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
       - name: Run scraper script
         run: |
           echo ":rocket: Running with URL: ${{ inputs.arg1 }}"
