@@ -2,7 +2,7 @@
   "name": "desktop",
   "version": "1.0.0",
   "type": "module",
-  "main": "scrapeFile.js",
+  "main": "my_parser.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,7 +14,8 @@
     "express": "^5.1.0",
     "jsdom": "^26.1.0",
     "node-fetch": "^3.3.2",
-    "puppeteer": "^24.6.1",
+    "dotenv": "^16.4.5",
+    "puppeteer": "21.3.8",
     "turndown": "^7.2.0"
   }
 }
