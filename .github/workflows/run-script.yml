@@ -17,9 +17,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: depend
-        run: npm install puppeteer-extra-plugin-stealth
-
       - name: Run scraper script
         run: |
           echo ":rocket: Running with URL: ${{ inputs.arg1 }}"
