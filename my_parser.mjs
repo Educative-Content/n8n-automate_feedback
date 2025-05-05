@@ -290,7 +290,11 @@ async function fetchLessonAndParse(url) {
 }
 
 async function fetchJsonWithPuppeteer(url, headers, fileName) {
-  const browser = await puppeteer.launch({ headless: true });
+  //const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+  headless: 'new', // or true/false depending on version
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
   const page = await browser.newPage();
   await page.setExtraHTTPHeaders(headers);
 
@@ -309,7 +313,11 @@ async function fetchJsonWithPuppeteer(url, headers, fileName) {
 async function scrapeWithAuth(url) {
   const headers = await loadHeaders();
 
-  const browser = await puppeteer.launch({ headless: true });
+  //const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+  headless: 'new', // or true/false depending on version
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
   const page = await browser.newPage();
 
   await page.setExtraHTTPHeaders(headers);
