@@ -1,8 +1,12 @@
 import puppeteer from 'puppeteer';
+import puppeteerExtra from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { readFile, writeFile } from 'fs/promises';
 import { JSDOM } from 'jsdom';
 import TurndownService from 'turndown';
 import fetch from 'node-fetch';
+
+puppeteerExtra.use(StealthPlugin());
 
 async function loadHeaders() {
   try {
@@ -14,7 +18,6 @@ async function loadHeaders() {
   }
 }
 
-
 function findSlugByTitle(jsonData, targetTitle) {
   for (const category of jsonData.instance.details.toc.categories) {
     for (const page of category.pages) {
@@ -23,12 +26,10 @@ function findSlugByTitle(jsonData, targetTitle) {
       }
     }
   }
-  return null; // Not found
+  return null;
 }
 
 const turndownService = new TurndownService();
-
-// Optional: Configure ATX-style headers
 turndownService.addRule('headers', {
   filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
   replacement: function (content, node) {
@@ -52,292 +53,80 @@ function fixLatex(text) {
   return `$$${text.replace(/\\/g, '\\').replace(/\n/g, '')}$$\n`;
 }
 
-async function fetchLessonAndParse(url) {
-  let headers = { 'Accept': 'application/json' };
-  try {
-    const headerJson = await readFile('headers.json', 'utf-8');
-    headers = { ...headers, ...JSON.parse(headerJson) };
-  } catch (err) {
-    console.warn('⚠️ Could not load headers.json. Proceeding with default headers.');
-  }
+async function fetchJsonWithPuppeteer(url, headers, fileName) {
+  const browser = await puppeteerExtra.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+  const page = await browser.newPage();
+  await page.setExtraHTTPHeaders(headers);
+  await page.goto(url, { waitUntil: 'networkidle0' });
+  const rawJson = await page.evaluate(() => document.body.innerText);
+  await browser.close();
+  const parsed = JSON.parse(rawJson);
+  await writeFile(fileName, JSON.stringify(parsed, null, 2), 'utf-8');
+  return parsed;
+}
 
-  const res = await fetch(url, { headers });
+async function fetchLessonAndParse(url) {
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
   const json = await res.json();
-
   const structuredContent = [];
   const title = `# ${json.summary.title}\n`;
   const summary = `${json.summary.description}\n---\n`;
   structuredContent.push(["SlateHTML", title + summary]);
-
-  for (const x of json.components) {
-    let markdownContent = "";
-    if (x.type === 'SlateHTML' || x.type === 'TableHTML') {
-      const preProcessed = convertKatexToMarkdown(x.content.html);
-      markdownContent = turndownService.turndown(preProcessed).replace(/\\_/g, '_');
-    } else if (x.type === 'Latex') {
-      markdownContent = fixLatex(x.content.text);
-    } else if (x.type === 'MarkdownEditor') {
-      markdownContent = x.content.text;
-    } 
-    else if (x.type === 'Code') {
-    	const lang = x.content.language || '';
-  	const caption = x.content.caption ? `**${x.content.caption}**\n\n` : '';
-  	const learnerCode = x.content.content || '';
-  	const solutionCode = x.content.solutionContent || '';
-  	const showSolution = x.content.showSolution;
-
-  	// Learner's code block
-  	markdownContent = `${caption}\`\`\`${lang}\n${learnerCode.trim()}\n\`\`\`\n`;
-
-  	// Add collapsible solution if present and allowed
-  	if (showSolution && solutionCode.trim()) {
-   		 markdownContent += `<details>\n<summary> Solution</summary>\n\n`;
-    		markdownContent += `\`\`\`${lang}\n${solutionCode.trim()}\n\`\`\`\n</details>\n`;
-  	}
-    }
-
-    else if (x.type === 'PromptAI') {
-     // Skip AI logic blocks — not user-facing
-     continue;
-    }
-    else if (x.type === 'LazyLoadPlaceholder') {
-     // Skip AI logic blocks — not user-facing
-     continue;
-    }
-    else if (x.type === 'Notepad') {
-     continue;
-    }
-    else if (x.type === 'DrawIOWidget') {
-     continue;
-    }
-    else if (x.type === 'Columns') {
-       for (const col of x.content.comps || []) {
-          if (col.type === 'MarkdownEditor') {
-            markdownContent += col.content.text + '\n\n';
-          } else {
-            console.log(` Skipping column sub-type: ${col.type}`);
-          }
-      }
-    }
-    else if (x.type === 'Quiz') {
-         const quiz = x.content;
-         markdownContent += `### Quiz: ${quiz.title || ''}\n\n`;
-
-         quiz.questions.forEach((q, i) => {
-            markdownContent += `**Q${i + 1}: ${q.questionText}**\n`;
-
-            q.questionOptions.forEach(opt => {
-               const mark = opt.correct ? '[x]' : '[ ]';
-               markdownContent += `- ${mark} ${opt.text}\n`;
-            });
-
-         markdownContent += '\n';
-      });
-    }
-    
-    else if (x.type === 'WebpackBin') {
-  	let markdown = `### WebpackBin Playground\n`;
-
-  	// Step 1: Note the framework and environment
-  	const enabledLoader = Object.entries(x.content.loaders || {}).find(([key, loader]) => loader.enabled);
-  	if (enabledLoader) {
-    		const [loaderKey, loader] = enabledLoader;
-    		markdown += `**Environment:** ${loader.title}\n\n`;
-  	}
-
-  	// Step 2: Loop through file structure
-  	const allFiles = [];
-  	const traverse = (children = []) => {
-    		for (const node of children) {
-      			if (node.leaf && node.data?.content) {
-        			allFiles.push({
-          				fileName: node.module,
-          				code: node.data.content,
-          				language: node.data.language || 'javascript'
-        			});
-      			} else if (node.children) {
-        			traverse(node.children);
-     		        }
-    		}
-  	};
-  	traverse(x.content.codeContents.children);
-
-  	for (const file of allFiles) {
-    		markdown += `\n<details>\n<summary>${file.fileName}</summary>\n\n\`\`\`${file.language}\n${file.code}\n\`\`\`\n</details>\n`;
-  	}
-
-  	// Step 3: Mention if evaluation exists
-  	if (x.content.codeContents.judge?.evaluationContent) {
-    		markdown += `\n<details>\n<summary>🔍 Evaluation Code</summary>\n\n\`\`\`javascript\n${x.content.codeContents.judge.evaluationContent}\n\`\`\`\n</details>\n`;
- 	 }
-
-  	// Optional: Note on Docker Job
-  	if (x.content.dockerJob?.name) {
-    		markdown += `\n_This widget runs in a **Live Docker container**: \`${x.content.dockerJob.name}\`_\n`;
-  	}
-
-  	structuredContent.push([x.type, markdown]);
-    }
-
-    else if (x.type === 'MatchTheAnswers') {
-  	markdownContent = `### Match the Answers\n\n`;
-
-  	const pairs = x.content.content.statements?.[0] || [];
-
-  	pairs.forEach((pair, idx) => {
-    		const left = pair.left?.text?.trim() || '—';
-    		const right = pair.right?.text?.trim() || 'None provided';
-    		markdownContent += `**${idx + 1}.** ${left}\n Match: *${right}*\n\n`;
-                if (pair.explanation) {
-  			markdownContent += `> Explanation: ${pair.explanation}\n\n`;
-		}
-  	});
-    }
-    else if (x.type === 'Table') {
-  	const rows = x.content.data;
-
-  	if (rows.length > 0) {
-   	 // Parse header row
-    		const headerCells = rows[0].map(cellHtml => turndownService.turndown(cellHtml).trim());
-    		const header = `| ${headerCells.join(' | ')} |`;
-    		const divider = `| ${headerCells.map(() => '---').join(' | ')} |`;
-
-    	// Parse remaining rows
-    		const body = rows.slice(1).map(row => {
-      		const cells = row.map(cellHtml => turndownService.turndown(cellHtml).trim());
-     	 return `| ${cells.join(' | ')} |`;
-    	});
-
-    	markdownContent = `${header}\n${divider}\n${body.join('\n')}\n`;
-  	}
-    }
-    else if (x.type === 'Permutation') {
-  	const prompt = x.content.question_statement || 'Reorder the following steps:';
-  	const options = x.content.options || [];
-  	const protectedOrder = x.content.protected_content || [];
-
-  	markdownContent = `### Reorder the Steps\n\n**${prompt}**\n\n`;
-
-  	// Display unordered options as "cards"
-        options.forEach(opt => {
-           const stepText = opt.content?.data?.trim() || '—';
-           markdownContent += `- ${stepText}\n`;
-        });
-
-        // Map for solution lookup
-        const idToTextMap = Object.fromEntries(
-         options.map(opt => [opt.hashid, opt.content?.data?.trim() || '—'])
-        );
-
-        // Add collapsible solution
-        if (protectedOrder.length) {
-          markdownContent += `\n<details>\n<summary> Solution</summary>\n\n`;
-          protectedOrder.forEach((hashId, idx) => {
-          const line = idToTextMap[hashId] || '(missing)';
-          markdownContent += `${idx + 1}. ${line}\n`;
-         });
-        markdownContent += `\n</details>\n`;
-       }
-    } else if (x.type === 'CodeTest') {
-  	let markdown = `### CodeTest: ${x.content.caption || ''}\n`;
-
-  	const languageContents = x.content.languageContents || {};
-  	const additionalFiles = x.content.additionalFiles || {};
-
-  	// Loop through all languages (Python, Java, etc.)
-  	for (const [lang, langBlock] of Object.entries(languageContents)) {
-    		markdown += `\n#### Language: ${lang}\n`;
-
-    		const mainFileName = langBlock.mainFileName || `main.${lang.toLowerCase()}`;
-    		const mainCode = langBlock.codeContents?.content || '';
-
-    		if (mainCode) {
-      			markdown += `\n<details>\n<summary>${mainFileName}</summary>\n\n\`\`\`${lang.toLowerCase()}\n${mainCode}\n\`\`\`\n</details>\n`;
-    		}
-
-    		// Additional files for this language
-    		const extras = additionalFiles[lang] || {};
-    		for (const [fileName, fileObj] of Object.entries(extras)) {
-      			const extraCode = fileObj.codeContents?.content || '';
-      			if (extraCode) {
-        			markdown += `\n<details>\n<summary>${fileName}</summary>\n\n\`\`\`${lang.toLowerCase()}\n${extraCode}\n\`\`\`\n</details>\n`;
-      			}
-    		}
-  	}
-
-  	// Include solution (if available)
-  	if (x.content.solution?.content) {
-    		const lang = x.content.solution.language || 'text';
-    		markdown += `\n<details>\n<summary>💡 Solution</summary>\n\n\`\`\`${lang.toLowerCase()}\n${x.content.solution.content}\n\`\`\`\n</details>\n`;
- 	 }
-
-  	structuredContent.push([x.type, markdown]);
-    }
-
-    else {
-      console.log("Unhandled type:", x.type);
-    }
-    if (!markdownContent.endsWith("\n")) markdownContent += "\n";
-    structuredContent.push([x.type, markdownContent]);
-  }
-
   const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
   await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
-  //console.log('Markdown saved to lesson_output.md');
   return fullMarkdown;
 }
 
-async function fetchJsonWithPuppeteer(url, headers, fileName) {
-  //const browser = await puppeteer.launch({ headless: true });
-  const browser = await puppeteer.launch({
-  headless: 'new', // or true/false depending on version
-  args: ['--no-sandbox', '--disable-setuid-sandbox']
+async function scrapeWithAuth(url, ...args) {
+  const headersFromFile = await loadHeaders();
+
+  const cookieArgs = [];
+
+  for (const arg of args) {
+    if (!arg.includes(':')) continue;
+    const [key, value] = arg.split(':', 2).map(x => x.trim());
+    cookieArgs.push(`${key}=${value}`);
+  }
+
+  const cookieFromFile = headersFromFile['cookie'] || headersFromFile['Cookie'] || '';
+  const mergedCookie = [cookieFromFile, ...cookieArgs].filter(Boolean).join('; ');
+
+  delete headersFromFile['cookie'];
+  delete headersFromFile['Cookie'];
+
+  const finalHeaders = {
+    ...headersFromFile,
+    Cookie: mergedCookie,
+    'User-Agent': headersFromFile['User-Agent'] || headersFromFile['user-agent'] || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+  };
+
+  console.log('🧠 Final headers sent:', finalHeaders);
+
+  const browser = await puppeteerExtra.launch({
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
+
   const page = await browser.newPage();
-  await page.setExtraHTTPHeaders(headers);
-
+  await page.setExtraHTTPHeaders(finalHeaders);
   await page.goto(url, { waitUntil: 'networkidle0' });
-
-  const rawJson = await page.evaluate(() => document.body.innerText);
-
-  await browser.close();
-
-  const parsed = JSON.parse(rawJson);
-  await writeFile(fileName, JSON.stringify(parsed, null, 2), 'utf-8');
-  //console.log('📥JSON saved to '+fileName);
-  return parsed;
-}
-
-async function scrapeWithAuth(url) {
-  const headers = await loadHeaders();
-
-  //const browser = await puppeteer.launch({ headless: true });
-  const browser = await puppeteer.launch({
-  headless: 'new', // or true/false depending on version
-  args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
-  const page = await browser.newPage();
-
-  await page.setExtraHTTPHeaders(headers);
-  await page.goto(url, { waitUntil: 'networkidle0' });
-
   await page.evaluate(() => {
     document.querySelectorAll('details').forEach(el => el.open = true);
   });
-
+  await page.screenshot({ path: '403_debug.png' });
   const html = await page.content();
-
   await browser.close();
 
   const dom = new JSDOM(html);
   const document = dom.window.document;
-
   const title = document.querySelector('title');
   const ogImage = document.querySelector('meta[property="og:image"]');
   const description = document.querySelector('meta[name="description"]');
   const ogTitle = document.querySelector('meta[property="og:title"]');
-
   const ogImageUrl = ogImage?.getAttribute('content') || '';
   const baseImagePath = ogImageUrl.split('/image')[0];
 
@@ -349,7 +138,7 @@ async function scrapeWithAuth(url) {
     ogTitle: ogTitle?.getAttribute('content') || '',
   };
 
-  await fetchJsonWithPuppeteer(baseImagePath, headers, 'downloaded_data.json');
+  await fetchJsonWithPuppeteer(baseImagePath, finalHeaders, 'downloaded_data.json');
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
   const slug = findSlugByTitle(data, metadata.title);
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
@@ -357,13 +146,11 @@ async function scrapeWithAuth(url) {
   return metadata;
 }
 
-// CLI usage
-const url = process.argv[2];
+const [url, ...cookieArgs] = process.argv.slice(2);
 if (!url) {
-  console.error("❌ Please provide a URL: node scrape_with_auth.js <URL>");
+  console.error("❌ Please provide a URL: node my_parser.mjs <URL> [cf_bp:VALUE] [cf_clearance:VALUE]");
   process.exit(1);
 }
-
-scrapeWithAuth(url).catch(err => {
+scrapeWithAuth(url, ...cookieArgs).catch(err => {
   console.error("❌ Scraping failed:", err.message);
 });

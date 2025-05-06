@@ -9,17 +9,16 @@ on:
 jobs:
   run-script:
     runs-on: ubuntu-latest
-    env:
-      # Optional secure injection from GitHub Secrets
-      SECURE_HEADER_NAME: cf_bp
-      SECURE_HEADER_VALUE: ${{ secrets.CF_BP_TOKEN }}
+    
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Run scraper script
+        env:
+            SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
         run: |
           echo ":rocket: Running with URL: ${{ inputs.arg1 }}"
-          OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}")
+          OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "$SECURE_COOKIE")
           echo "$OUTPUT" > lesson_output.md
           echo "output=$OUTPUT" >> $GITHUB_OUTPUT
