@@ -104,7 +104,8 @@ async function scrapeWithAuth(url, ...args) {
     'User-Agent': headersFromFile['User-Agent'] || headersFromFile['user-agent'] || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
   };
 
-  console.log('🧠 Final headers sent:', finalHeaders);
+  //console.log('🧠 Final headers sent:', finalHeaders);
+  console.log('🧠 Final headers sent:\n' + JSON.stringify(finalHeaders, null, 2));
 
   const browser = await puppeteerExtra.launch({
     headless: 'new',
