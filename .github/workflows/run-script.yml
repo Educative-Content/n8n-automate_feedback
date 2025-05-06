@@ -22,19 +22,10 @@ jobs:
             node_modules
           key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
 
-      - name: Cache Puppeteer Chromium
-        uses: actions/cache@v3
-        with:
-            path: ~/.cache/puppeteer
-            key: ${{ runner.os }}-puppeteer-${{ hashFiles('**/package-lock.json') }}
-
       - name: Install dependencies
         run: npm install
         env:
-            PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: false
-
-      - name: Install Puppeteer Chromium explicitly
-        run: node node_modules/puppeteer/install.js
+            PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
 
       - name: Run scraper script
         env:
