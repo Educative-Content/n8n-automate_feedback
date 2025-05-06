@@ -55,6 +55,7 @@ function fixLatex(text) {
 
 async function fetchJsonWithPuppeteer(url, headers, fileName) {
   const browser = await puppeteerExtra.launch({
+    executablePath: '/usr/bin/google-chrome-stable',
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
@@ -108,6 +109,7 @@ async function scrapeWithAuth(url, ...args) {
   console.log('🧠 Final headers sent:\n' + JSON.stringify(finalHeaders, null, 2));
 
   const browser = await puppeteerExtra.launch({
+    executablePath: '/usr/bin/google-chrome-stable',
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
