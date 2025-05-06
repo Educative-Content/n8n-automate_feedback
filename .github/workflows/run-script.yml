@@ -33,6 +33,9 @@ jobs:
         env:
             PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: false
 
+      - name: Install Puppeteer Chromium explicitly
+        run: node node_modules/puppeteer/install.js
+
       - name: Run scraper script
         env:
             SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
