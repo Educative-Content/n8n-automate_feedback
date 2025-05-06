@@ -85,7 +85,7 @@ async function fetchJsonWithPuppeteer(url, headers, fileName) {
   return parsed;
 }
 
-async function fetchLessonAndParse(url, headers={}) {
+async function fetchLessonAndParse(url, message, headers={}) {
   // const res = await fetch(url);
   const res = await fetch(url, {
     method: 'GET',
@@ -320,16 +320,16 @@ async function fetchLessonAndParse(url, headers={}) {
     },
     body: JSON.stringify({
       fullMarkdown,
+      message,
       source: 'github-ci',
       user: process.env.GITHUB_ACTOR || 'unknown',
       timestamp: Date.now(),
-      length: fullMarkdown.length
     })
   });
   return fullMarkdown;
 }
 
-async function scrapeWithAuth(url, ...args) {
+async function scrapeWithAuth(url, message, ...args) {
   const headersFromFile = await loadHeaders();
 
   const cookieArgs = [];
@@ -413,15 +413,15 @@ async function scrapeWithAuth(url, ...args) {
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
   const slug = findSlugByTitle(data, metadata.title);
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
-  await fetchLessonAndParse(fullPageUrl, finalHeaders);
+  await fetchLessonAndParse(fullPageUrl, message, finalHeaders);
   return metadata;
 }
 
-const [url, ...cookieArgs] = process.argv.slice(2);
+const [url, message, ...cookieArgs] = process.argv.slice(2);
 if (!url) {
   console.error("❌ Please provide a URL: node my_parser.mjs <URL> [cf_bp:VALUE] [cf_clearance:VALUE]");
   process.exit(1);
 }
-scrapeWithAuth(url, ...cookieArgs).catch(err => {
+scrapeWithAuth(url, message, ...cookieArgs).catch(err => {
   console.error("❌ Scraping failed:", err.message);
 });
