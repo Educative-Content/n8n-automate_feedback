@@ -85,8 +85,12 @@ async function fetchJsonWithPuppeteer(url, headers, fileName) {
   return parsed;
 }
 
-async function fetchLessonAndParse(url) {
-  const res = await fetch(url);
+async function fetchLessonAndParse(url, headers={}) {
+  //const res = await fetch(url);
+  const res = await fetch(url, {
+    method: 'GET',
+    headers
+  });
   if (!res.ok) throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
   const json = await res.json();
   const structuredContent = [];
@@ -182,7 +186,7 @@ async function scrapeWithAuth(url, ...args) {
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
   const slug = findSlugByTitle(data, metadata.title);
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
-  await fetchLessonAndParse(fullPageUrl);
+  await fetchLessonAndParse(fullPageUrl, finalHeaders);
   return metadata;
 }
 
