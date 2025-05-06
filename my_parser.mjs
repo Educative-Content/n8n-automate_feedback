@@ -97,8 +97,235 @@ async function fetchLessonAndParse(url, headers={}) {
   const title = `# ${json.summary.title}\n`;
   const summary = `${json.summary.description}\n---\n`;
   structuredContent.push(["SlateHTML", title + summary]);
+
+    for (const x of json.components) {
+    let markdownContent = "";
+    if (x.type === 'SlateHTML' || x.type === 'TableHTML') {
+      const preProcessed = convertKatexToMarkdown(x.content.html);
+      markdownContent = turndownService.turndown(preProcessed).replace(/\\_/g, '_');
+    } else if (x.type === 'Latex') {
+      markdownContent = fixLatex(x.content.text);
+    } else if (x.type === 'MarkdownEditor') {
+      markdownContent = x.content.text;
+    } 
+    else if (x.type === 'Code') {
+    	const lang = x.content.language || '';
+  	const caption = x.content.caption ? `**${x.content.caption}**\n\n` : '';
+  	const learnerCode = x.content.content || '';
+  	const solutionCode = x.content.solutionContent || '';
+  	const showSolution = x.content.showSolution;
+
+  	// Learner's code block
+  	markdownContent = `${caption}\`\`\`${lang}\n${learnerCode.trim()}\n\`\`\`\n`;
+
+  	// Add collapsible solution if present and allowed
+  	if (showSolution && solutionCode.trim()) {
+   		 markdownContent += `<details>\n<summary> Solution</summary>\n\n`;
+    		markdownContent += `\`\`\`${lang}\n${solutionCode.trim()}\n\`\`\`\n</details>\n`;
+  	}
+    }
+
+    else if (x.type === 'PromptAI') {
+     // Skip AI logic blocks — not user-facing
+     continue;
+    }
+    else if (x.type === 'LazyLoadPlaceholder') {
+     // Skip AI logic blocks — not user-facing
+     continue;
+    }
+    else if (x.type === 'Notepad') {
+     continue;
+    }
+    else if (x.type === 'DrawIOWidget') {
+     continue;
+    }
+    else if (x.type === 'Columns') {
+       for (const col of x.content.comps || []) {
+          if (col.type === 'MarkdownEditor') {
+            markdownContent += col.content.text + '\n\n';
+          } else {
+            console.log(` Skipping column sub-type: ${col.type}`);
+          }
+      }
+    }
+    else if (x.type === 'Quiz') {
+         const quiz = x.content;
+         markdownContent += `### Quiz: ${quiz.title || ''}\n\n`;
+
+         quiz.questions.forEach((q, i) => {
+            markdownContent += `**Q${i + 1}: ${q.questionText}**\n`;
+
+            q.questionOptions.forEach(opt => {
+               const mark = opt.correct ? '[x]' : '[ ]';
+               markdownContent += `- ${mark} ${opt.text}\n`;
+            });
+
+         markdownContent += '\n';
+      });
+    }
+    
+    else if (x.type === 'WebpackBin') {
+  	let markdown = `### WebpackBin Playground\n`;
+
+  	// Step 1: Note the framework and environment
+  	const enabledLoader = Object.entries(x.content.loaders || {}).find(([key, loader]) => loader.enabled);
+  	if (enabledLoader) {
+    		const [loaderKey, loader] = enabledLoader;
+    		markdown += `**Environment:** ${loader.title}\n\n`;
+  	}
+
+  	// Step 2: Loop through file structure
+  	const allFiles = [];
+  	const traverse = (children = []) => {
+    		for (const node of children) {
+      			if (node.leaf && node.data?.content) {
+        			allFiles.push({
+          				fileName: node.module,
+          				code: node.data.content,
+          				language: node.data.language || 'javascript'
+        			});
+      			} else if (node.children) {
+        			traverse(node.children);
+     		        }
+    		}
+  	};
+  	traverse(x.content.codeContents.children);
+
+  	for (const file of allFiles) {
+    		markdown += `\n<details>\n<summary>${file.fileName}</summary>\n\n\`\`\`${file.language}\n${file.code}\n\`\`\`\n</details>\n`;
+  	}
+
+  	// Step 3: Mention if evaluation exists
+  	if (x.content.codeContents.judge?.evaluationContent) {
+    		markdown += `\n<details>\n<summary>🔍 Evaluation Code</summary>\n\n\`\`\`javascript\n${x.content.codeContents.judge.evaluationContent}\n\`\`\`\n</details>\n`;
+ 	 }
+
+  	// Optional: Note on Docker Job
+  	if (x.content.dockerJob?.name) {
+    		markdown += `\n_This widget runs in a **Live Docker container**: \`${x.content.dockerJob.name}\`_\n`;
+  	}
+
+  	structuredContent.push([x.type, markdown]);
+    }
+
+    else if (x.type === 'MatchTheAnswers') {
+  	markdownContent = `### Match the Answers\n\n`;
+
+  	const pairs = x.content.content.statements?.[0] || [];
+
+  	pairs.forEach((pair, idx) => {
+    		const left = pair.left?.text?.trim() || '—';
+    		const right = pair.right?.text?.trim() || 'None provided';
+    		markdownContent += `**${idx + 1}.** ${left}\n Match: *${right}*\n\n`;
+                if (pair.explanation) {
+  			markdownContent += `> Explanation: ${pair.explanation}\n\n`;
+		}
+  	});
+    }
+    else if (x.type === 'Table') {
+  	const rows = x.content.data;
+
+  	if (rows.length > 0) {
+   	 // Parse header row
+    		const headerCells = rows[0].map(cellHtml => turndownService.turndown(cellHtml).trim());
+    		const header = `| ${headerCells.join(' | ')} |`;
+    		const divider = `| ${headerCells.map(() => '---').join(' | ')} |`;
+
+    	// Parse remaining rows
+    		const body = rows.slice(1).map(row => {
+      		const cells = row.map(cellHtml => turndownService.turndown(cellHtml).trim());
+     	 return `| ${cells.join(' | ')} |`;
+    	});
+
+    	markdownContent = `${header}\n${divider}\n${body.join('\n')}\n`;
+  	}
+    }
+    else if (x.type === 'Permutation') {
+  	const prompt = x.content.question_statement || 'Reorder the following steps:';
+  	const options = x.content.options || [];
+  	const protectedOrder = x.content.protected_content || [];
+
+  	markdownContent = `### Reorder the Steps\n\n**${prompt}**\n\n`;
+
+  	// Display unordered options as "cards"
+        options.forEach(opt => {
+           const stepText = opt.content?.data?.trim() || '—';
+           markdownContent += `- ${stepText}\n`;
+        });
+
+        // Map for solution lookup
+        const idToTextMap = Object.fromEntries(
+         options.map(opt => [opt.hashid, opt.content?.data?.trim() || '—'])
+        );
+
+        // Add collapsible solution
+        if (protectedOrder.length) {
+          markdownContent += `\n<details>\n<summary> Solution</summary>\n\n`;
+          protectedOrder.forEach((hashId, idx) => {
+          const line = idToTextMap[hashId] || '(missing)';
+          markdownContent += `${idx + 1}. ${line}\n`;
+         });
+        markdownContent += `\n</details>\n`;
+       }
+    } else if (x.type === 'CodeTest') {
+  	let markdown = `### CodeTest: ${x.content.caption || ''}\n`;
+
+  	const languageContents = x.content.languageContents || {};
+  	const additionalFiles = x.content.additionalFiles || {};
+
+  	// Loop through all languages (Python, Java, etc.)
+  	for (const [lang, langBlock] of Object.entries(languageContents)) {
+    		markdown += `\n#### Language: ${lang}\n`;
+
+    		const mainFileName = langBlock.mainFileName || `main.${lang.toLowerCase()}`;
+    		const mainCode = langBlock.codeContents?.content || '';
+
+    		if (mainCode) {
+      			markdown += `\n<details>\n<summary>${mainFileName}</summary>\n\n\`\`\`${lang.toLowerCase()}\n${mainCode}\n\`\`\`\n</details>\n`;
+    		}
+
+    		// Additional files for this language
+    		const extras = additionalFiles[lang] || {};
+    		for (const [fileName, fileObj] of Object.entries(extras)) {
+      			const extraCode = fileObj.codeContents?.content || '';
+      			if (extraCode) {
+        			markdown += `\n<details>\n<summary>${fileName}</summary>\n\n\`\`\`${lang.toLowerCase()}\n${extraCode}\n\`\`\`\n</details>\n`;
+      			}
+    		}
+  	}
+
+  	// Include solution (if available)
+  	if (x.content.solution?.content) {
+    		const lang = x.content.solution.language || 'text';
+    		markdown += `\n<details>\n<summary>💡 Solution</summary>\n\n\`\`\`${lang.toLowerCase()}\n${x.content.solution.content}\n\`\`\`\n</details>\n`;
+ 	 }
+
+  	structuredContent.push([x.type, markdown]);
+    }
+
+    else {
+      console.log("Unhandled type:", x.type);
+    }
+    if (!markdownContent.endsWith("\n")) markdownContent += "\n";
+    structuredContent.push([x.type, markdownContent]);
+  }
   const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
-  await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
+  //await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
+    const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
+
+  await fetch(n8nWebhookUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      fullMarkdown,
+      source: 'github-ci',
+      user: process.env.GITHUB_ACTOR || 'unknown',
+      timestamp: Date.now(),
+      length: fullMarkdown.length
+    })
+  });
   return fullMarkdown;
 }
 
@@ -186,23 +413,7 @@ async function scrapeWithAuth(url, ...args) {
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
   const slug = findSlugByTitle(data, metadata.title);
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
-  const markdown = await fetchLessonAndParse(fullPageUrl, finalHeaders);
-
-  const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
-
-  await fetch(n8nWebhookUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      markdown,
-      source: 'github-ci',
-      user: process.env.GITHUB_ACTOR || 'unknown',
-      timestamp: Date.now(),
-      length: markdown.length
-    })
-  });
+  await fetchLessonAndParse(fullPageUrl, finalHeaders);
   return metadata;
 }
 
