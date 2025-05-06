@@ -61,7 +61,11 @@ async function fetchJsonWithPuppeteer(url, headers, fileName) {
   });
   const page = await browser.newPage();
   await page.setExtraHTTPHeaders(headers);
-  await page.goto(url, { waitUntil: 'networkidle0' });
+  //await page.goto(url, { waitUntil: 'networkidle0' });
+  await page.goto(url, {
+  waitUntil: 'domcontentloaded', // or 'load' instead of 'networkidle0'
+  timeout: 60000 // 60 seconds instead of 30
+  });
   const rawJson = await page.evaluate(() => document.body.innerText);
   await browser.close();
   const parsed = JSON.parse(rawJson);
@@ -116,7 +120,12 @@ async function scrapeWithAuth(url, ...args) {
 
   const page = await browser.newPage();
   await page.setExtraHTTPHeaders(finalHeaders);
-  await page.goto(url, { waitUntil: 'networkidle0' });
+  //await page.goto(url, { waitUntil: 'networkidle0' });
+  await page.goto(url, {
+  waitUntil: 'domcontentloaded', // or 'load' instead of 'networkidle0'
+  timeout: 60000 // 60 seconds instead of 30
+  });
+
   await page.evaluate(() => {
     document.querySelectorAll('details').forEach(el => el.open = true);
   });
