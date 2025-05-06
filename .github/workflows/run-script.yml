@@ -35,3 +35,14 @@ jobs:
           OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "$SECURE_COOKIE")
           echo "$OUTPUT" > lesson_output.md
           echo "output=$OUTPUT" >> $GITHUB_OUTPUT
+
+
+      - name: Upload debug artifacts
+        if: always()  # Always run, even on failure
+        uses: actions/upload-artifact@v3
+        with:
+          name: debug-output
+          path: |
+            403_debug.png
+            downloaded_data.json
+            lesson_output.md
