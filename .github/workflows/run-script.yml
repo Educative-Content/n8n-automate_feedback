@@ -34,15 +34,14 @@ jobs:
           echo ":rocket: Running with URL: ${{ inputs.arg1 }}"
           OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "$SECURE_COOKIE")
           echo "$OUTPUT" > lesson_output.md
-          echo "output=$OUTPUT" >> $GITHUB_OUTPUT
 
 
-      - name: Upload debug artifacts
-        if: always()  # Always run, even on failure
-        uses: actions/upload-artifact@v2
-        with:
-          name: debug-output
-          path: |
-            403_debug.png
-            downloaded_data.json
-            lesson_output.md
+      - name: Collect debug files (instead of artifact upload)
+        if: always()
+        run: |
+          mkdir -p output
+          cp 403_debug.png output/ || true
+          cp 403_debug.html output/ || true
+          cp downloaded_data.json output/ || true
+          cp lesson_output.md output/ || true
+          echo "✅ Debug files copied to ./output/"
