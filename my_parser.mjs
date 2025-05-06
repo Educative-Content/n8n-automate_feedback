@@ -86,11 +86,11 @@ async function fetchJsonWithPuppeteer(url, headers, fileName) {
 }
 
 async function fetchLessonAndParse(url, headers={}) {
-  const res = await fetch(url);
-  /*const res = await fetch(url, {
+  // const res = await fetch(url);
+  const res = await fetch(url, {
     method: 'GET',
     headers
-  });*/
+  });
   if (!res.ok) throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
   const json = await res.json();
   const structuredContent = [];
