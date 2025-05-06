@@ -31,7 +31,7 @@ jobs:
         env:
             SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
         run: |
-          echo ":rocket: Running with URL: ${{ inputs.arg1 }}"
+          echo "Running with ${{ inputs.arg1 }} ${{SECURE_COOKIE}}"
           OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "$SECURE_COOKIE")
           echo "$OUTPUT" > lesson_output.md
 
