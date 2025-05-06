@@ -29,7 +29,7 @@ jobs:
 
       - name: Run scraper script
         env:
-            SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
+            SECURE_COOKIE: "cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
         run: |
           echo "Running with ${{ inputs.arg1 }} $SECURE_COOKIE"
           OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "$SECURE_COOKIE")
