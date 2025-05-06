@@ -199,7 +199,8 @@ async function scrapeWithAuth(url, ...args) {
       markdown,
       source: 'github-ci',
       user: process.env.GITHUB_ACTOR || 'unknown',
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      length: markdown.length
     })
   });
   return metadata;
