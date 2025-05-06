@@ -31,7 +31,7 @@ jobs:
         env:
             SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
         run: |
-          echo "Running with ${{ inputs.arg1 }} ${{SECURE_COOKIE}}"
+          echo "Running with ${{ inputs.arg1 }} $SECURE_COOKIE"
           OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "$SECURE_COOKIE")
           echo "$OUTPUT" > lesson_output.md
 
