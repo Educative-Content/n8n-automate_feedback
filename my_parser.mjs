@@ -188,7 +188,7 @@ async function scrapeWithAuth(url, ...args) {
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
   const markdown = await fetchLessonAndParse(fullPageUrl, finalHeaders);
 
-  const n8nWebhookUrl = https://daniaahmad13.app.n8n.cloud/webhook/scrape-result; // or pass as an argument
+  const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
 
   await fetch(n8nWebhookUrl, {
     method: 'POST',
