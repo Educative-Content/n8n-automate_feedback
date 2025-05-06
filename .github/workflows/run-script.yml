@@ -14,6 +14,17 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Install dependencies
+        run: npm install
+        env:
+            PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: false
+
+      - name: Cache Puppeteer Chromium
+        uses: actions/cache@v3
+        with:
+            path: ~/.cache/puppeteer
+            key: ${{ runner.os }}-puppeteer-${{ hashFiles('**/package-lock.json') }}
+
       - name: Run scraper script
         env:
             SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
