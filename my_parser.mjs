@@ -186,7 +186,22 @@ async function scrapeWithAuth(url, ...args) {
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
   const slug = findSlugByTitle(data, metadata.title);
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
-  await fetchLessonAndParse(fullPageUrl, finalHeaders);
+  const markdown = await fetchLessonAndParse(fullPageUrl, finalHeaders);
+
+  const n8nWebhookUrl = https://daniaahmad13.app.n8n.cloud/webhook/scrape-result; // or pass as an argument
+
+  await fetch(n8nWebhookUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      markdown,
+      source: 'github-ci',
+      user: process.env.GITHUB_ACTOR || 'unknown',
+      timestamp: Date.now()
+    })
+  });
   return metadata;
 }
 
