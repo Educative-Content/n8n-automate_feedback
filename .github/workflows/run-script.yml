@@ -39,7 +39,7 @@ jobs:
 
       - name: Upload debug artifacts
         if: always()  # Always run, even on failure
-        uses: actions/upload-artifact@v3.1.4
+        uses: actions/upload-artifact@v2
         with:
           name: debug-output
           path: |
