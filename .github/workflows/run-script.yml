@@ -41,14 +41,8 @@ jobs:
           
           # Save the headers JSON to a temporary file to avoid Bash issues
           echo '${{ secrets.HEADERS_JSON }}' > headers.json
-
-          # Run the scraper using the JSON file instead of direct input
-          node ./my_parser.mjs "${{ inputs.arg1 }}" "${{ inputs.arg2 }}" "$SECURE_COOKIE" "$(cat headers.json)" > scraper_output.txt 2>&1
-          cat scraper_output.txt
-          echo "✅ Script execution completed."
-
-          # Capture output in lesson_output.md
-          cp scraper_output.txt lesson_output.md
+          OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "${{ inputs.arg2 }}" "$SECURE_COOKIE" "$(cat headers.json)")
+          echo "$OUTPUT" > lesson_output.md
 
 
       - name: Collect debug files (instead of artifact upload)
