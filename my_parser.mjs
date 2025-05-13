@@ -5,6 +5,7 @@ import { readFile, writeFile } from 'fs/promises';
 import { JSDOM } from 'jsdom';
 import TurndownService from 'turndown';
 import fetch from 'node-fetch';
+import fs from 'fs/promises';
 
 puppeteerExtra.use(StealthPlugin());
 
