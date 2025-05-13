@@ -44,7 +44,7 @@ jobs:
           echo "Running with ${{ inputs.arg1 }} $SECURE_COOKIE"
           
           # Correctly save the JSON string as valid JSON
-          echo '${{ inputs.cred }}' | jq '.' > headers.json
+          echo '${{ inputs.cred }}' | jq -c '.' > headers.json
           HEADERS_JSON=$(cat headers.json)
 
           # Ensure JSON is valid
