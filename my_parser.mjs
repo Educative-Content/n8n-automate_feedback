@@ -400,7 +400,7 @@ async function scrapeWithAuth(url, message, args) {
     Object.defineProperty(navigator, 'webdriver', { get: () => false });
   });
 
-  await page.setExtraHTTPHeaders(finalHeaders);
+  await page.setExtraHTTPHeaders(args);
 
   try {
     await page.goto(url, {
@@ -445,11 +445,11 @@ async function scrapeWithAuth(url, message, args) {
     ogTitle: ogTitle?.getAttribute('content') || '',
   };
 
-  await fetchJsonWithPuppeteer(baseImagePath, finalHeaders, 'downloaded_data.json');
+  await fetchJsonWithPuppeteer(baseImagePath, args, 'downloaded_data.json');
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
   const slug = findSlugByTitle(data, metadata.title);
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
-  await fetchLessonAndParse(fullPageUrl, message, finalHeaders);
+  await fetchLessonAndParse(fullPageUrl, message, args);
   return metadata;
 }
 
