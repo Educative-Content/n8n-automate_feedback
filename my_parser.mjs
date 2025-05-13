@@ -454,7 +454,7 @@ async function scrapeWithAuth(url, message, headers, ...args) {
 }
 
 //const [url, message, ...cookieArgs] = process.argv.slice(2);
-const [url, message, headersJson] = process.argv.slice(2);
+const [url, message, headersJson, ...cookieArgs] = process.argv.slice(2);
 if (!url) {
   console.error("❌ Please provide a URL: node my_parser.mjs <URL> [cf_bp:VALUE] [cf_clearance:VALUE]");
   process.exit(1);
