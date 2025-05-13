@@ -8,6 +8,42 @@ import fetch from 'node-fetch';
 
 puppeteerExtra.use(StealthPlugin());
 
+/**
+ * ✅ Load Headers and Cookies
+ * @param {string} headersJson - Headers JSON string from CLI
+ * @returns {Object} - Final headers with cookies
+ */
+
+function loadHeadersAndCookies(headersJson) {
+  let headers = {
+    'Accept': 'text/html',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+  };
+
+  // ✅ Load Headers from JSON
+  if (headersJson) {
+    try {
+      const parsedHeaders = JSON.parse(headersJson);
+      headers = { ...headers, ...parsedHeaders };
+    } catch (err) {
+      console.error("❌ Invalid Headers JSON:", headersJson);
+      process.exit(1);
+    }
+  }
+
+  // ✅ Load Cookies from Environment (SECURE_COOKIE)
+  const secureCookie = process.env.SECURE_COOKIE || '';
+  if (secureCookie) {
+    headers['Cookie'] = secureCookie;
+    console.log('🍪 Cookies from ENV:', headers['Cookie']);
+  } else {
+    console.warn('⚠️ No cookies found in ENV.');
+  }
+
+  console.log('🧠 Final Headers:\n' + JSON.stringify(headers, null, 2));
+  return headers;
+}
+
 async function loadHeaders() {
   try {
     const headersJson = await readFile('headers.json', 'utf-8');
@@ -329,10 +365,10 @@ async function fetchLessonAndParse(url, message, headers={}) {
   return fullMarkdown;
 }
 
-async function scrapeWithAuth(url, message, ...args) {
-  const headersFromFile = await loadHeaders();
+async function scrapeWithAuth(url, message, args) {
+  //const headersFromFile = await loadHeaders();
 
-  const cookieArgs = [];
+  /*const cookieArgs = [];
   for (const arg of args) {
     if (!arg.includes(':')) continue;
     const [key, value] = arg.split(':', 2).map(x => x.trim());
@@ -351,7 +387,7 @@ async function scrapeWithAuth(url, message, ...args) {
   };
 
   console.log('🧠 Final headers sent:\n' + JSON.stringify(finalHeaders, null, 2));
-  console.log('🍪 Final Cookie header:\n' + finalHeaders.Cookie);
+  console.log('🍪 Final Cookie header:\n' + finalHeaders.Cookie);*/
 
   const browser = await puppeteerExtra.launch({
     executablePath: '/usr/bin/google-chrome-stable',
@@ -417,11 +453,13 @@ async function scrapeWithAuth(url, message, ...args) {
   return metadata;
 }
 
-const [url, message, ...cookieArgs] = process.argv.slice(2);
+//const [url, message, ...cookieArgs] = process.argv.slice(2);
+const [url, message, headersJson] = process.argv.slice(2);
 if (!url) {
   console.error("❌ Please provide a URL: node my_parser.mjs <URL> [cf_bp:VALUE] [cf_clearance:VALUE]");
   process.exit(1);
 }
-scrapeWithAuth(url, message, ...cookieArgs).catch(err => {
+const headers = loadHeadersAndCookies(headersJson);
+scrapeWithAuth(url, message, headers).catch(err => {
   console.error("❌ Scraping failed:", err.message);
 });
