@@ -365,20 +365,20 @@ async function fetchLessonAndParse(url, message, headers={}) {
   return fullMarkdown;
 }
 
-async function scrapeWithAuth(url, message, args) {
+async function scrapeWithAuth(url, message, headers, ...args) {
   //const headersFromFile = await loadHeaders();
 
-  /*const cookieArgs = [];
+  const cookieArgs = [];
   for (const arg of args) {
     if (!arg.includes(':')) continue;
     const [key, value] = arg.split(':', 2).map(x => x.trim());
     cookieArgs.push(`${key}=${value}`);
   }
 
-  const cookieFromFile = headersFromFile['cookie'] || headersFromFile['Cookie'] || '';
+  const cookieFromFile = headers['cookie'] || headers['Cookie'] || '';
   const mergedCookie = [cookieFromFile, ...cookieArgs].filter(Boolean).join('; ');
-  delete headersFromFile['cookie'];
-  delete headersFromFile['Cookie'];
+  delete headers['cookie'];
+  delete headers['Cookie'];
 
   const finalHeaders = {
     ...headersFromFile,
@@ -387,7 +387,7 @@ async function scrapeWithAuth(url, message, args) {
   };
 
   console.log('🧠 Final headers sent:\n' + JSON.stringify(finalHeaders, null, 2));
-  console.log('🍪 Final Cookie header:\n' + finalHeaders.Cookie);*/
+  console.log('🍪 Final Cookie header:\n' + finalHeaders.Cookie);
 
   const browser = await puppeteerExtra.launch({
     executablePath: '/usr/bin/google-chrome-stable',
@@ -400,7 +400,7 @@ async function scrapeWithAuth(url, message, args) {
     Object.defineProperty(navigator, 'webdriver', { get: () => false });
   });
 
-  await page.setExtraHTTPHeaders(args);
+  await page.setExtraHTTPHeaders(finalHeaders);
 
   try {
     await page.goto(url, {
@@ -445,11 +445,11 @@ async function scrapeWithAuth(url, message, args) {
     ogTitle: ogTitle?.getAttribute('content') || '',
   };
 
-  await fetchJsonWithPuppeteer(baseImagePath, args, 'downloaded_data.json');
+  await fetchJsonWithPuppeteer(baseImagePath, finalHeaders, 'downloaded_data.json');
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
   const slug = findSlugByTitle(data, metadata.title);
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
-  await fetchLessonAndParse(fullPageUrl, message, args);
+  await fetchLessonAndParse(fullPageUrl, message, finalHeaders);
   return metadata;
 }
 
@@ -459,7 +459,22 @@ if (!url) {
   console.error("❌ Please provide a URL: node my_parser.mjs <URL> [cf_bp:VALUE] [cf_clearance:VALUE]");
   process.exit(1);
 }
-const headers = loadHeadersAndCookies(headersJson);
-scrapeWithAuth(url, message, headers).catch(err => {
+//const headers = loadHeadersAndCookies(headersJson);
+  let headers = {
+    'Accept': 'text/html',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+  };
+
+  // ✅ Load Headers from JSON
+  if (headersJson) {
+    try {
+      const parsedHeaders = JSON.parse(headersJson);
+      headers = { ...headers, ...parsedHeaders };
+    } catch (err) {
+      console.error("❌ Invalid Headers JSON:", headersJson);
+      process.exit(1);
+    }
+}
+scrapeWithAuth(url, message, headers, ..cookieArgs).catch(err => {
   console.error("❌ Scraping failed:", err.message);
 });
