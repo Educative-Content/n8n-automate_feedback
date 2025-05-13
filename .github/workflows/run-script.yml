@@ -13,7 +13,7 @@ on:
         type: string
 
       cred:
-        description: 'Headers JSON (excluding cookies)'
+        description: 'Headers JSON (including cookies)'
         required: true
         type: string
 jobs:
@@ -43,8 +43,8 @@ jobs:
         run: |
           echo "Running with ${{ inputs.arg1 }} $SECURE_COOKIE"
           
-          # Save the headers JSON (WITHOUT COOKIES) to a temporary file
-          echo '${{ inputs.cred }}' > headers.json
+          # Correctly save the JSON string as valid JSON
+          echo '${{ inputs.cred }}' | jq '.' > headers.json
           HEADERS_JSON=$(cat headers.json)
 
           # Ensure JSON is valid
