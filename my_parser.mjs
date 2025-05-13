@@ -381,9 +381,9 @@ async function scrapeWithAuth(url, message, headers, ...args) {
   delete headers['Cookie'];
 
   const finalHeaders = {
-    ...headersFromFile,
+    ...headers,
     Cookie: mergedCookie,
-    'User-Agent': headersFromFile['User-Agent'] || headersFromFile['user-agent'] || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+    'User-Agent': headers['User-Agent'] || headers['user-agent'] || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
   };
 
   console.log('🧠 Final headers sent:\n' + JSON.stringify(finalHeaders, null, 2));
