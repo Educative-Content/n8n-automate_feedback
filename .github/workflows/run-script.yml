@@ -47,6 +47,10 @@ jobs:
           echo '${{ inputs.cred }}' > headers.json
           HEADERS_JSON=$(cat headers.json)
 
+          # Ensure JSON is valid
+          echo "Loaded Headers JSON:"
+          echo "$HEADERS_JSON"
+
           # Run the scraper script with headers JSON and cookies separately
           OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "${{ inputs.arg2 }}" "$HEADERS_JSON" "$SECURE_COOKIE")
           echo "$OUTPUT" > lesson_output.md
