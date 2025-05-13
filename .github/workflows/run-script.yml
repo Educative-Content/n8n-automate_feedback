@@ -39,11 +39,11 @@ jobs:
         run: |
           echo "Running with ${{ inputs.arg1 }} $SECURE_COOKIE"
           
-          # Save the headers JSON to a temporary file to avoid Bash issues
-          echo '${{ secrets.HEADERS_JSON }}' > headers.json
-          OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "${{ inputs.arg2 }}" "$SECURE_COOKIE" "$(cat headers.json)")
-          echo "$OUTPUT" > lesson_output.md
+          # Save the headers JSON to a temporary file
+          echo "${{ secrets.HEADERS_JSON }}" | jq '.' > headers.json
 
+          # Run the script using the JSON file path (not the JSON string)
+          node ./my_parser.mjs "${{ inputs.arg1 }}" "${{ inputs.arg2 }}" "$SECURE_COOKIE" headers.json > lesson_output.md 2>&1
 
       - name: Collect debug files (instead of artifact upload)
         if: always()
