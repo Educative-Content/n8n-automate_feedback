@@ -454,12 +454,20 @@ async function scrapeWithAuth(url, message, args) {
 }
 
 //const [url, message, ...cookieArgs] = process.argv.slice(2);
-const [url, message, headersJson] = process.argv.slice(2);
+//const [url, message, headersJson] = process.argv.slice(2);
+const [url, message, cookies, headersFilePath] = process.argv.slice(2);
 if (!url) {
   console.error("❌ Please provide a URL: node my_parser.mjs <URL> [cf_bp:VALUE] [cf_clearance:VALUE]");
   process.exit(1);
 }
-const headers = loadHeadersAndCookies(headersJson);
+//const headers = loadHeadersAndCookies(headersJson);
+    const headersJson = await fs.readFile(headersFilePath, 'utf-8');
+    const headers = JSON.parse(headersJson);
+    if (cookies) {
+      headers['Cookie'] = headers['Cookie']
+        ? `${headers['Cookie']}; ${cookies}`
+        : cookies;
+    }
 scrapeWithAuth(url, message, headers).catch(err => {
   console.error("❌ Scraping failed:", err.message);
 });
