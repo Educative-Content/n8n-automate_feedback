@@ -13,7 +13,7 @@ on:
         type: string
 
       cred:
-        description: 'Headers JSON (including cookies)'
+        description: 'Headers JSON (excluding cookies)'
         required: true
         type: string
 jobs:
@@ -42,7 +42,11 @@ jobs:
             SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
         run: |
           echo "Running with ${{ inputs.arg1 }} $SECURE_COOKIE"
+          
+          # Save the headers JSON (WITHOUT COOKIES) to a temporary file
           echo '${{ inputs.cred }}' > headers.json
           HEADERS_JSON=$(cat headers.json)
-          OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "${{ inputs.arg2 }}" "$SECURE_COOKIE" "$HEADERS_JSON")
+
+          # Run the scraper script with headers JSON and cookies separately
+          OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "${{ inputs.arg2 }}" "$HEADERS_JSON" "$SECURE_COOKIE")
           echo "$OUTPUT" > lesson_output.md
