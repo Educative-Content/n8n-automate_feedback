@@ -46,7 +46,7 @@ jobs:
           INPUT_JSON=$(jq -n \
             --arg arg1 "${{ inputs.arg1 }}" \
             --arg arg2 "${{ inputs.arg2 }}" \
-            --arg cred '${{ inputs.cred }}' \
+            --arg cred "${{ inputs.cred }}" \
             --arg cookie "$SECURE_COOKIE" \
             '{url: $arg1, message: $arg2, headersJson: $cred, cookie: $cookie}')
 
