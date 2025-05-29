@@ -494,6 +494,6 @@ const { url, message, headersJson, cookieArgs } = parsed;
       process.exit(1);
     }
 }
-scrapeWithAuth(url, message, headers, ...cookieArgs).catch(err => {
+scrapeWithAuth(url, message, headers, cookieArgs).catch(err => {
   console.error("❌ Scraping failed:", err.message);
 });
