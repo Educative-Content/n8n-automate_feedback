@@ -365,11 +365,11 @@ async function fetchLessonAndParse(url, message, headers={}) {
   return fullMarkdown;
 }
 
-async function scrapeWithAuth(url, message, headers, ...args) {
+async function scrapeWithAuth(url, message, headers, cookieString = '') {
   //const headersFromFile = await loadHeaders();
 
   const cookieArgs = [];
-  for (const arg of args) {
+  /*for (const arg of args) {
     if (!arg.includes(':')) continue;
     const [key, value] = arg.split(':', 2).map(x => x.trim());
     cookieArgs.push(`${key}=${value}`);
@@ -377,6 +377,18 @@ async function scrapeWithAuth(url, message, headers, ...args) {
 
   const cookieFromFile = headers['cookie'] || headers['Cookie'] || '';
   const mergedCookie = [cookieFromFile, ...cookieArgs].filter(Boolean).join('; ');
+  delete headers['cookie'];
+  delete headers['Cookie'];*/
+
+if (cookieString && typeof cookieString === 'string') {
+    const parts = cookieString.split(';').map(x => x.trim());
+    for (const part of parts) {
+      if (!part.includes('=')) continue;
+      cookieArgs.push(part);
+    }
+  }
+
+  const mergedCookie = cookieArgs.filter(Boolean).join('; ');
   delete headers['cookie'];
   delete headers['Cookie'];
 
