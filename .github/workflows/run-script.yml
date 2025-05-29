@@ -1,5 +1,4 @@
 name: Run Scraper Script
-
 on:
   workflow_dispatch:
     inputs:
@@ -9,7 +8,7 @@ on:
         type: string
 
       arg2:
-        description: 'Message'
+        description: 'message'
         required: true
         type: string
 
@@ -17,7 +16,6 @@ on:
         description: 'Headers JSON (including cookies)'
         required: true
         type: string
-
 jobs:
   run-script:
     runs-on: ubuntu-latest
@@ -37,28 +35,23 @@ jobs:
       - name: Install dependencies
         run: npm install
         env:
-          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+            PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
 
       - name: Run scraper script
         env:
-          SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
+            SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
         run: |
-          echo "🚀 Building input JSON"
+          echo "Running with ${{ inputs.arg1 }} $SECURE_COOKIE"
 
-          jq -n \
-          --arg url "${{ inputs.arg1 }}" \
-          --arg message "${{ inputs.arg2 }}" \
-          --arg cred "${{ inputs.cred }}" \
-          --arg cookie "$SECURE_COOKIE" \
-          '{
-              url: $url,
-              message: $message,
-              headersJson: $cred,
-              cookie: $cookie
-          }' > input.json
+          # Correctly save the JSON string as valid JSON
+          # echo '${{ inputs.cred }}' | jq -c '.' > headers.json
+          # HEADERS_JSON=$(cat headers.json)
+          HEADERS_JSON=$(echo '${{ inputs.cred }}' | jq -c '.')
 
-          echo "📦 Input JSON:"
-          echo "$INPUT_JSON"
+          # Ensure JSON is valid
+          echo "Loaded Headers JSON:"
+          echo "$HEADERS_JSON"
 
-          echo "🚀 Running scraper..."
-          node ./my_parser.mjs "$(cat input.json)"
+          # Run the scraper script with headers JSON and cookies separately
+          OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "${{ inputs.arg2 }}" "$HEADERS_JSON" "$SECURE_COOKIE")
+          echo "$OUTPUT" > lesson_output.md
