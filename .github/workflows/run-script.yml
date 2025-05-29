@@ -43,8 +43,6 @@ jobs:
         env:
           SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
         run: |
-          echo "🔧 Preparing input..."
-          
           INPUT_JSON=$(jq -n \
             --arg url "${{ inputs.arg1 }}" \
             --arg message "${{ inputs.arg2 }}" \
