@@ -477,7 +477,7 @@ try {
   process.exit(1);
 }
 
-const { url, message, headersJson, ...cookieArgs } = parsed;
+const { url, message, headersJson, cookieArgs } = parsed;
 //const headers = loadHeadersAndCookies(headersJson);
   let headers = {
     'Accept': 'text/html',
