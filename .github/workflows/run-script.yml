@@ -37,6 +37,11 @@ jobs:
         env:
             PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
 
+      - name: Encode message
+        id: encode
+        run: |
+          echo "message64=$(echo "${{ inputs.arg2 }}" | base64 -w 0)" >> $GITHUB_OUTPUT
+          
       - name: Run scraper script
         env:
             SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
@@ -49,7 +54,7 @@ jobs:
           #HEADERS_JSON=$(echo '${{ inputs.cred }}' | jq -c '.')
           INPUT_JSON=$(jq -n \
           --arg url "${{ inputs.arg1 }}" \
-          --arg message "${{ inputs.arg2 }}" \
+          --arg message "$(echo '${{ steps.encode.outputs.message64 }}' | base64 -d)" \
           --arg headersJson '${{ inputs.cred }}' \
           --arg cookie "$SECURE_COOKIE" \
           '{url: $url, message: $message, headersJson: $headersJson, cookieString: $cookie}')
