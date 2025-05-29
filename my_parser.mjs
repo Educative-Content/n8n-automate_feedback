@@ -444,13 +444,22 @@ async function scrapeWithAuth(url, message, headers, ...args) {
     baseImagePath: baseImagePath,
     ogTitle: ogTitle?.getAttribute('content') || '',
   };
-
+  try{
   await fetchJsonWithPuppeteer(baseImagePath, finalHeaders, 'downloaded_data.json');
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
   const slug = findSlugByTitle(data, metadata.title);
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
-  await fetchLessonAndParse(fullPageUrl, message, finalHeaders);
-  return metadata;
+  	try{
+  		await fetchLessonAndParse(fullPageUrl, message, finalHeaders);
+  		return metadata;
+	}
+          catch (err) {
+    return null;
+  }
+  }
+  catch (err) {
+    return null;
+  }
 }
 
 //const [url, message, ...cookieArgs] = process.argv.slice(2);
