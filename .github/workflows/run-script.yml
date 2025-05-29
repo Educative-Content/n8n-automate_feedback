@@ -46,12 +46,18 @@ jobs:
           # Correctly save the JSON string as valid JSON
           # echo '${{ inputs.cred }}' | jq -c '.' > headers.json
           # HEADERS_JSON=$(cat headers.json)
-          HEADERS_JSON=$(echo '${{ inputs.cred }}' | jq -c '.')
+          #HEADERS_JSON=$(echo '${{ inputs.cred }}' | jq -c '.')
+          INPUT_JSON=$(jq -n \
+          --arg url "${{ inputs.arg1 }}" \
+          --arg message "${{ inputs.arg2 }}" \
+          --arg headersJson '${{ inputs.cred }}' \
+          --arg cookie "$SECURE_COOKIE" \
+          '{url: $url, message: $message, headersJson: $headersJson, cookieString: $cookie}')
 
           # Ensure JSON is valid
           echo "Loaded Headers JSON:"
           echo "$HEADERS_JSON"
 
           # Run the scraper script with headers JSON and cookies separately
-          OUTPUT=$(node ./my_parser.mjs "${{ inputs.arg1 }}" "${{ inputs.arg2 }}" "$HEADERS_JSON" "$SECURE_COOKIE")
+          OUTPUT=$(node ./my_parser.mjs "$INPUT_JSON"
           echo "$OUTPUT" > lesson_output.md
