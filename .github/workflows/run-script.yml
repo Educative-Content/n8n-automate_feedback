@@ -45,7 +45,7 @@ jobs:
           
           # Correctly save the JSON string as valid JSON
           echo '${{ inputs.cred }}' | jq -c '.' > headers.json
-          HEADERS_JSON=$(cat headers.json)
+          HEADERS_JSON=$(jq -c -R < headers.json)
 
           # Ensure JSON is valid
           echo "Loaded Headers JSON:"
