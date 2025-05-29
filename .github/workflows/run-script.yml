@@ -43,10 +43,7 @@ jobs:
         env:
           SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
         run: |
-          INPUT_JSON=$(jq -n --arg arg1 "${{ inputs.arg1 }}" \
-            --arg arg2 "${{ inputs.arg2 }}" \
-            --arg cred "${{ inputs.cred }}" \
-            --arg cookie "$SECURE_COOKIE" \
+          INPUT_JSON=$(jq -n --arg arg1 "${{ inputs.arg1 }}" --arg arg2 "${{ inputs.arg2 }}" --arg cred "${{ inputs.cred }}" --arg cookie "$SECURE_COOKIE" \
             '{url: $arg1, message: $arg2, headersJson: $cred, cookie: $cookie}')
 
           echo "📦 Input JSON:"
