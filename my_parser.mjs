@@ -479,13 +479,17 @@ if (cookieString && typeof cookieString === 'string') {
   await fetchJsonWithPuppeteer(baseImagePath, finalHeaders, 'downloaded_data.json');
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
   const slug = findSlugByTitle(data, metadata.title);
+  if (!slug) {
+  console.error("❌ Could not find slug for metadata.title! Aborting.");
+  return;
+}
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
   	try{
   		await fetchLessonAndParse(fullPageUrl, message, finalHeaders);
   		return metadata;
 	}
           catch (err) {
-	console.error("❌ fetchLessonAndParse failed:", err.message);
+	console.error("❌ fetchLessonAndParse failed:", err.message, err.stack);
     return null;
   }
   }
