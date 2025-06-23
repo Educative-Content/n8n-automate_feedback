@@ -420,35 +420,6 @@ async function fetchLessonAndParse(url, message, headers={}) {
     })
   });
   return fullMarkdown;
-}*/
- const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
-
-  // ✅ Webhook: send final parsed markdown
-  try {
-    const response = await fetch(n8nWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fullMarkdown,
-        message,
-        source: 'github-ci',
-        user: process.env.GITHUB_ACTOR || 'unknown',
-        timestamp: Date.now()
-      })
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      console.error(`❌ Webhook POST failed: ${response.status}`);
-      console.error(text);
-    } else {
-      console.log(`✅ Webhook delivered: ${response.status}`);
-    }
-  } catch (err) {
-    console.error('❌ Error sending webhook:', err.message);
-  }
-
-  return fullMarkdown;
 }
 
 async function postErrorToWebhook({ message, reason, htmlPreview }) {
