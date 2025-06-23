@@ -61,7 +61,8 @@ jobs:
 
           # Ensure JSON is valid
           echo "Loaded Headers JSON:"
-          echo "$HEADERS_JSON"
+          # echo "$HEADERS_JSON"
+          echo "$INPUT_JSON" | jq .
 
           # Run the scraper script with headers JSON and cookies separately
           OUTPUT=$(node ./my_parser.mjs "$INPUT_JSON")
