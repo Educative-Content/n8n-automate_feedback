@@ -365,22 +365,31 @@ async function fetchLessonAndParse(url, message, headers={}) {
   return fullMarkdown;
 }
 
-async function scrapeWithAuth(url, message, headers, cookieString = '') {
-  //const headersFromFile = await loadHeaders();
-
-  const cookieArgs = [];
-  /*for (const arg of args) {
-    if (!arg.includes(':')) continue;
-    const [key, value] = arg.split(':', 2).map(x => x.trim());
-    cookieArgs.push(`${key}=${value}`);
+async function postErrorToWebhook({ message, reason, htmlPreview }) {
+  const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result";
+  try {
+    const res = await fetch(n8nWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        status: 'failed',
+        reason,
+        htmlPreview,
+        user: process.env.GITHUB_ACTOR || 'unknown',
+        timestamp: Date.now()
+      })
+    });
+    const text = await res.text();
+    console.log(`⚠️ Webhook error report response (${res.status}):`, text);
+  } catch (err) {
+    console.error('❌ Failed to notify webhook of error:', err.message);
   }
+}
 
-  const cookieFromFile = headers['cookie'] || headers['Cookie'] || '';
-  const mergedCookie = [cookieFromFile, ...cookieArgs].filter(Boolean).join('; ');
-  delete headers['cookie'];
-  delete headers['Cookie'];*/
-
-if (cookieString && typeof cookieString === 'string') {
+async function scrapeWithAuth(url, message, headers, cookieString = '') {
+  const cookieArgs = [];
+  if (cookieString && typeof cookieString === 'string') {
     const parts = cookieString.split(';').map(x => x.trim());
     for (const part of parts) {
       if (!part.includes('=')) continue;
@@ -398,21 +407,20 @@ if (cookieString && typeof cookieString === 'string') {
     'User-Agent': headers['User-Agent'] || headers['user-agent'] || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
   };
 
-  console.log(':brain: Final headers sent:\n' + JSON.stringify(finalHeaders, null, 2));
-  console.log(':cookie: Final Cookie header:\n' + finalHeaders.Cookie);
+  console.log('🧠 Final headers sent:\n' + JSON.stringify(finalHeaders, null, 2));
+  console.log('🍪 Final Cookie header:\n' + finalHeaders.Cookie);
 
   const browser = await puppeteerExtra.launch({
     executablePath: '/usr/bin/google-chrome-stable',
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
-  const page = await browser.newPage();
 
+  const page = await browser.newPage();
+  await page.setExtraHTTPHeaders(finalHeaders);
   await page.evaluateOnNewDocument(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => false });
   });
-
-  await page.setExtraHTTPHeaders(finalHeaders);
 
   try {
     await page.goto(url, {
@@ -420,28 +428,40 @@ if (cookieString && typeof cookieString === 'string') {
       timeout: 60000
     });
     await page.waitForSelector('body', { timeout: 20000 });
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
   } catch (err) {
-    console.warn(':x: Navigation failed, retrying once after delay...');
-    await page.waitForTimeout(5000);
-    await page.goto(url, {
-      waitUntil: 'domcontentloaded',
-      timeout: 60000
-    });
-    await page.waitForSelector('body', { timeout: 20000 });
+    console.warn('❌ Navigation failed, retrying...');
+    await page.waitForTimeout(3000);
+    try {
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    } catch (err2) {
+      console.error('❌ Second navigation failed:', err2.message);
+      await postErrorToWebhook({ message, reason: 'navigation_failed', htmlPreview: '' });
+      await browser.close();
+      return null;
+    }
   }
 
   await page.evaluate(() => {
     document.querySelectorAll('details').forEach(el => el.open = true);
   });
 
-  await page.screenshot({ path: '403_debug.png' });
   const html = await page.content();
   await writeFile('403_debug.html', html, 'utf-8');
-  await browser.close();
+  await page.screenshot({ path: '403_debug.png' });
+  console.log('📄 HTML saved, screenshot taken.');
 
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
+  let dom, document;
+  try {
+    dom = new JSDOM(html);
+    document = dom.window.document;
+  } catch (err) {
+    console.error('❌ JSDOM parsing failed:', err.message);
+    await browser.close();
+    await postErrorToWebhook({ message, reason: 'jsdom_parse_failed', htmlPreview: html.slice(0, 1000) });
+    return null;
+  }
+
   const title = document.querySelector('title');
   const ogImage = document.querySelector('meta[property="og:image"]');
   const description = document.querySelector('meta[name="description"]');
@@ -453,27 +473,41 @@ if (cookieString && typeof cookieString === 'string') {
     title: title?.textContent || '',
     description: description?.getAttribute('content') || '',
     ogImage: ogImageUrl,
-    baseImagePath: baseImagePath,
+    baseImagePath,
     ogTitle: ogTitle?.getAttribute('content') || '',
   };
-  try{
-  await fetchJsonWithPuppeteer(baseImagePath, finalHeaders, 'downloaded_data.json');
-  const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
-  const slug = findSlugByTitle(data, metadata.title);
-  const fullPageUrl = `${baseImagePath}/page/${slug}`;
-  	try{
-  		await fetchLessonAndParse(fullPageUrl, message, finalHeaders);
-  		return metadata;
-	}
-          catch (err) {
+
+  await browser.close();
+
+  if (!metadata.title || !baseImagePath) {
+    console.warn('❌ Missing metadata. Skipping fetch.');
+    await postErrorToWebhook({
+      message,
+      reason: 'missing_metadata',
+      htmlPreview: html.slice(0, 1000)
+    });
     return null;
   }
-  }
-  catch (err) {
+
+  try {
+    await fetchJsonWithPuppeteer(baseImagePath, finalHeaders, 'downloaded_data.json');
+    const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
+    const slug = findSlugByTitle(data, metadata.title);
+    const fullPageUrl = `${baseImagePath}/page/${slug}`;
+
+    console.log('📘 Fetching full lesson page:', fullPageUrl);
+    await fetchLessonAndParse(fullPageUrl, message, finalHeaders);
+    return metadata;
+  } catch (err) {
+    console.error('❌ Lesson parse failed:', err.message);
+    await postErrorToWebhook({
+      message,
+      reason: 'lesson_parse_failed',
+      htmlPreview: html.slice(0, 1000)
+    });
     return null;
   }
 }
-
 //const [url, message, ...cookieArgs] = process.argv.slice(2);
 /*const [url, message, headersJson, ...cookieArgs] = process.argv.slice(2);
 if (!url) {
