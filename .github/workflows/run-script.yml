@@ -56,7 +56,7 @@ jobs:
           --arg url "${{ inputs.arg1 }}" \
           --arg message "$(echo '${{ steps.encode.outputs.message64 }}' | base64 -d)" \
           --arg headersJson '${{ inputs.cred }}' \
-          --arg cookie "$SECURE_COOKIE" \
+          --arg cookieArgs "$SECURE_COOKIE" \
           '{url: $url, message: $message, headersJson: $headersJson, cookieString: $cookie}')
 
           # Ensure JSON is valid
