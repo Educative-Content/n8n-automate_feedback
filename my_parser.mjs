@@ -480,6 +480,7 @@ if (cookieString && typeof cookieString === 'string') {
   		return metadata;
 	}
           catch (err) {
+	console.error("❌ fetchLessonAndParse failed:", err.message);
     return null;
   }
   }
