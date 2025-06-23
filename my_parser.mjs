@@ -343,7 +343,7 @@ async function fetchLessonAndParse(url, message, headers={}) {
   await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
   const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
 
-  await fetch(n8nWebhookUrl, {
+  /*await fetch(n8nWebhookUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -355,7 +355,27 @@ async function fetchLessonAndParse(url, message, headers={}) {
       user: process.env.GITHUB_ACTOR || 'unknown',
       timestamp: Date.now(),
     })
+  });*/
+  try {
+  const res = await fetch(n8nWebhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      fullMarkdown,
+      message,
+      source: 'github-ci',
+      user: process.env.GITHUB_ACTOR || 'unknown',
+      timestamp: Date.now(),
+    })
   });
+
+  const resText = await res.text();
+  console.log(`✅ Webhook POST status: ${res.status}`);
+  console.log(`📬 Webhook response: ${resText}`);
+} catch (err) {
+  console.error(`❌ Webhook call failed:`, err);
+}
+
   return fullMarkdown;
 }
 
