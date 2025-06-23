@@ -123,70 +123,13 @@ async function fetchJsonWithPuppeteer(url, headers, fileName) {
 
 async function fetchLessonAndParse(url, message, headers={}) {
   // const res = await fetch(url);
-  /*const res = await fetch(url, {
+  const res = await fetch(url, {
     method: 'GET',
     headers
   });
   if (!res.ok) throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
   const json = await res.json();
   const structuredContent = [];
-  const title = `# ${json.summary.title}\n`;
-  const summary = `${json.summary.description}\n---\n`;
-  structuredContent.push(["SlateHTML", title + summary]);*/
-  const cookieFromEnv = process.env.SECURE_COOKIE || '';
-  const mergedCookie = headers['Cookie'] || headers['cookie'] || cookieFromEnv;
-
-  const finalHeaders = {
-    ...headers,
-    Cookie: mergedCookie,
-    'User-Agent': headers['User-Agent'] || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
-    Accept: 'application/json'
-  };
-
-  console.log('📡 Fetching lesson JSON...');
-  console.log('🔗 URL:', url);
-  console.log('🧠 Headers:', JSON.stringify(finalHeaders, null, 2));
-
-  let res;
-  try {
-    res = await fetch(url, {
-      method: 'GET',
-      headers: finalHeaders
-    });
-  } catch (err) {
-    console.error('❌ Network error:', err.message);
-    throw new Error('Network failure when fetching lesson JSON.');
-  }
-
-  if (!res.ok) {
-    const text = await res.text();
-    console.error(`❌ Failed to fetch: ${res.status} ${res.statusText}`);
-    console.error('🧾 Response preview:\n', text.slice(0, 500));
-
-    // Optionally send webhook with failure status
-    try {
-      await fetch("https://daniaahmad13.app.n8n.cloud/webhook/scrape-result", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message,
-          status: `lesson_fetch_failed_${res.status}`,
-          reason: text.slice(0, 500),
-          source: 'github-ci',
-          user: process.env.GITHUB_ACTOR || 'unknown',
-          timestamp: Date.now(),
-        })
-      });
-    } catch (whErr) {
-      console.error('❌ Failed to send webhook about the failure:', whErr.message);
-    }
-
-    throw new Error(`Lesson fetch failed with status ${res.status}`);
-  }
-
-  const json = await res.json();
-  const structuredContent = [];
-
   const title = `# ${json.summary.title}\n`;
   const summary = `${json.summary.description}\n---\n`;
   structuredContent.push(["SlateHTML", title + summary]);
@@ -402,7 +345,7 @@ async function fetchLessonAndParse(url, message, headers={}) {
     if (!markdownContent.endsWith("\n")) markdownContent += "\n";
     structuredContent.push([x.type, markdownContent]);
   }
-  /*const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
+  const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
   //await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
     const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
 
@@ -422,31 +365,22 @@ async function fetchLessonAndParse(url, message, headers={}) {
   return fullMarkdown;
 }
 
-async function postErrorToWebhook({ message, reason, htmlPreview }) {
-  const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result";
-  try {
-    const res = await fetch(n8nWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message,
-        status: 'failed',
-        reason,
-        htmlPreview,
-        user: process.env.GITHUB_ACTOR || 'unknown',
-        timestamp: Date.now()
-      })
-    });
-    const text = await res.text();
-    console.log(`⚠️ Webhook error report response (${res.status}):`, text);
-  } catch (err) {
-    console.error('❌ Failed to notify webhook of error:', err.message);
-  }
-}
-
 async function scrapeWithAuth(url, message, headers, cookieString = '') {
+  //const headersFromFile = await loadHeaders();
+
   const cookieArgs = [];
-  if (cookieString && typeof cookieString === 'string') {
+  /*for (const arg of args) {
+    if (!arg.includes(':')) continue;
+    const [key, value] = arg.split(':', 2).map(x => x.trim());
+    cookieArgs.push(`${key}=${value}`);
+  }
+
+  const cookieFromFile = headers['cookie'] || headers['Cookie'] || '';
+  const mergedCookie = [cookieFromFile, ...cookieArgs].filter(Boolean).join('; ');
+  delete headers['cookie'];
+  delete headers['Cookie'];*/
+
+if (cookieString && typeof cookieString === 'string') {
     const parts = cookieString.split(';').map(x => x.trim());
     for (const part of parts) {
       if (!part.includes('=')) continue;
@@ -472,12 +406,13 @@ async function scrapeWithAuth(url, message, headers, cookieString = '') {
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
-
   const page = await browser.newPage();
-  await page.setExtraHTTPHeaders(finalHeaders);
+
   await page.evaluateOnNewDocument(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => false });
   });
+
+  await page.setExtraHTTPHeaders(finalHeaders);
 
   try {
     await page.goto(url, {
@@ -485,40 +420,28 @@ async function scrapeWithAuth(url, message, headers, cookieString = '') {
       timeout: 60000
     });
     await page.waitForSelector('body', { timeout: 20000 });
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(2000);
   } catch (err) {
-    console.warn('❌ Navigation failed, retrying...');
-    await page.waitForTimeout(3000);
-    try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    } catch (err2) {
-      console.error('❌ Second navigation failed:', err2.message);
-      await postErrorToWebhook({ message, reason: 'navigation_failed', htmlPreview: '' });
-      await browser.close();
-      return null;
-    }
+    console.warn('❌ Navigation failed, retrying once after delay...');
+    await page.waitForTimeout(5000);
+    await page.goto(url, {
+      waitUntil: 'domcontentloaded',
+      timeout: 60000
+    });
+    await page.waitForSelector('body', { timeout: 20000 });
   }
 
   await page.evaluate(() => {
     document.querySelectorAll('details').forEach(el => el.open = true);
   });
 
+  await page.screenshot({ path: '403_debug.png' });
   const html = await page.content();
   await writeFile('403_debug.html', html, 'utf-8');
-  await page.screenshot({ path: '403_debug.png' });
-  console.log('📄 HTML saved, screenshot taken.');
+  await browser.close();
 
-  let dom, document;
-  try {
-    dom = new JSDOM(html);
-    document = dom.window.document;
-  } catch (err) {
-    console.error('❌ JSDOM parsing failed:', err.message);
-    await browser.close();
-    await postErrorToWebhook({ message, reason: 'jsdom_parse_failed', htmlPreview: html.slice(0, 1000) });
-    return null;
-  }
-
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
   const title = document.querySelector('title');
   const ogImage = document.querySelector('meta[property="og:image"]');
   const description = document.querySelector('meta[name="description"]');
@@ -530,41 +453,27 @@ async function scrapeWithAuth(url, message, headers, cookieString = '') {
     title: title?.textContent || '',
     description: description?.getAttribute('content') || '',
     ogImage: ogImageUrl,
-    baseImagePath,
+    baseImagePath: baseImagePath,
     ogTitle: ogTitle?.getAttribute('content') || '',
   };
-
-  await browser.close();
-
-  if (!metadata.title || !baseImagePath) {
-    console.warn('❌ Missing metadata. Skipping fetch.');
-    await postErrorToWebhook({
-      message,
-      reason: 'missing_metadata',
-      htmlPreview: html.slice(0, 1000)
-    });
+  try{
+  await fetchJsonWithPuppeteer(baseImagePath, finalHeaders, 'downloaded_data.json');
+  const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
+  const slug = findSlugByTitle(data, metadata.title);
+  const fullPageUrl = `${baseImagePath}/page/${slug}`;
+  	try{
+  		await fetchLessonAndParse(fullPageUrl, message, finalHeaders);
+  		return metadata;
+	}
+          catch (err) {
     return null;
   }
-
-  try {
-    await fetchJsonWithPuppeteer(baseImagePath, finalHeaders, 'downloaded_data.json');
-    const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
-    const slug = findSlugByTitle(data, metadata.title);
-    const fullPageUrl = `${baseImagePath}/page/${slug}`;
-
-    console.log('📘 Fetching full lesson page:', fullPageUrl);
-    await fetchLessonAndParse(fullPageUrl, message, finalHeaders);
-    return metadata;
-  } catch (err) {
-    console.error('❌ Lesson parse failed:', err.message);
-    await postErrorToWebhook({
-      message,
-      reason: 'lesson_parse_failed',
-      htmlPreview: html.slice(0, 1000)
-    });
+  }
+  catch (err) {
     return null;
   }
 }
+
 //const [url, message, ...cookieArgs] = process.argv.slice(2);
 /*const [url, message, headersJson, ...cookieArgs] = process.argv.slice(2);
 if (!url) {
