@@ -8,6 +8,12 @@ import fetch from 'node-fetch';
 
 puppeteerExtra.use(StealthPlugin());
 
+/**
+ * ✅ Load Headers and Cookies
+ * @param {string} headersJson - Headers JSON string from CLI
+ * @returns {Object} - Final headers with cookies
+ */
+
 function loadHeadersAndCookies(headersJson) {
   let headers = {
     'Accept': 'text/html',
@@ -116,7 +122,7 @@ async function fetchJsonWithPuppeteer(url, headers, fileName) {
 }
 
 async function fetchLessonAndParse(url, message, headers={}) {
-
+  // const res = await fetch(url);
   const res = await fetch(url, {
     method: 'GET',
     headers
@@ -340,21 +346,10 @@ async function fetchLessonAndParse(url, message, headers={}) {
     structuredContent.push([x.type, markdownContent]);
   }
   const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
-  await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
-  const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
-  console.log("📍 About to POST to webhook");
+  //await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
+    const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
 
-const webhookPayload = {
-  fullMarkdown,
-  message,
-  source: 'github-ci',
-  user: process.env.GITHUB_ACTOR || 'unknown',
-  timestamp: Date.now(),
-};
-
-console.log("📦 Payload to send to n8n:");
-console.log(JSON.stringify(webhookPayload, null, 2));
-  /*await fetch(n8nWebhookUrl, {
+  await fetch(n8nWebhookUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -366,33 +361,24 @@ console.log(JSON.stringify(webhookPayload, null, 2));
       user: process.env.GITHUB_ACTOR || 'unknown',
       timestamp: Date.now(),
     })
-  });*/
-  try {
-  const res = await fetch(n8nWebhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      fullMarkdown,
-      message,
-      source: 'github-ci',
-      user: process.env.GITHUB_ACTOR || 'unknown',
-      timestamp: Date.now(),
-    })
   });
-
-  const resText = await res.text();
-  console.log(`✅ Webhook POST status: ${res.status}`);
-  console.log(`📬 Webhook response: ${resText}`);
-} catch (err) {
-  console.error(`❌ Webhook call failed:`, err);
-}
-
   return fullMarkdown;
 }
 
 async function scrapeWithAuth(url, message, headers, cookieString = '') {
+  //const headersFromFile = await loadHeaders();
 
   const cookieArgs = [];
+  /*for (const arg of args) {
+    if (!arg.includes(':')) continue;
+    const [key, value] = arg.split(':', 2).map(x => x.trim());
+    cookieArgs.push(`${key}=${value}`);
+  }
+
+  const cookieFromFile = headers['cookie'] || headers['Cookie'] || '';
+  const mergedCookie = [cookieFromFile, ...cookieArgs].filter(Boolean).join('; ');
+  delete headers['cookie'];
+  delete headers['Cookie'];*/
 
 if (cookieString && typeof cookieString === 'string') {
     const parts = cookieString.split(';').map(x => x.trim());
@@ -470,26 +456,16 @@ if (cookieString && typeof cookieString === 'string') {
     baseImagePath: baseImagePath,
     ogTitle: ogTitle?.getAttribute('content') || '',
   };
-  await fetch("https://postman-echo.com/post", {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ test: true }),
-}).then(r => r.json()).then(console.log).catch(console.error);
   try{
   await fetchJsonWithPuppeteer(baseImagePath, finalHeaders, 'downloaded_data.json');
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
   const slug = findSlugByTitle(data, metadata.title);
-  if (!slug) {
-  console.error("❌ Could not find slug for metadata.title! Aborting.");
-  return;
-}
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
   	try{
   		await fetchLessonAndParse(fullPageUrl, message, finalHeaders);
   		return metadata;
 	}
           catch (err) {
-	console.error("❌ fetchLessonAndParse failed:", err.message, err.stack);
     return null;
   }
   }
@@ -498,6 +474,12 @@ if (cookieString && typeof cookieString === 'string') {
   }
 }
 
+//const [url, message, ...cookieArgs] = process.argv.slice(2);
+/*const [url, message, headersJson, ...cookieArgs] = process.argv.slice(2);
+if (!url) {
+  console.error("❌ Please provide a URL: node my_parser.mjs <URL> [cf_bp:VALUE] [cf_clearance:VALUE]");
+  process.exit(1);
+}*/
 const [rawInput] = process.argv.slice(2);
 let parsed;
 try {
@@ -508,7 +490,7 @@ try {
 }
 
 const { url, message, headersJson, cookieArgs } = parsed;
-
+//const headers = loadHeadersAndCookies(headersJson);
   let headers = {
     'Accept': 'text/html',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
