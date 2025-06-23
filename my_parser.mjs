@@ -8,12 +8,6 @@ import fetch from 'node-fetch';
 
 puppeteerExtra.use(StealthPlugin());
 
-/**
- * ✅ Load Headers and Cookies
- * @param {string} headersJson - Headers JSON string from CLI
- * @returns {Object} - Final headers with cookies
- */
-
 function loadHeadersAndCookies(headersJson) {
   let headers = {
     'Accept': 'text/html',
@@ -122,7 +116,7 @@ async function fetchJsonWithPuppeteer(url, headers, fileName) {
 }
 
 async function fetchLessonAndParse(url, message, headers={}) {
-  // const res = await fetch(url);
+
   const res = await fetch(url, {
     method: 'GET',
     headers
@@ -346,8 +340,8 @@ async function fetchLessonAndParse(url, message, headers={}) {
     structuredContent.push([x.type, markdownContent]);
   }
   const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
-  //await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
-    const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
+  await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
+  const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
 
   await fetch(n8nWebhookUrl, {
     method: 'POST',
@@ -366,19 +360,8 @@ async function fetchLessonAndParse(url, message, headers={}) {
 }
 
 async function scrapeWithAuth(url, message, headers, cookieString = '') {
-  //const headersFromFile = await loadHeaders();
 
   const cookieArgs = [];
-  /*for (const arg of args) {
-    if (!arg.includes(':')) continue;
-    const [key, value] = arg.split(':', 2).map(x => x.trim());
-    cookieArgs.push(`${key}=${value}`);
-  }
-
-  const cookieFromFile = headers['cookie'] || headers['Cookie'] || '';
-  const mergedCookie = [cookieFromFile, ...cookieArgs].filter(Boolean).join('; ');
-  delete headers['cookie'];
-  delete headers['Cookie'];*/
 
 if (cookieString && typeof cookieString === 'string') {
     const parts = cookieString.split(';').map(x => x.trim());
@@ -474,12 +457,6 @@ if (cookieString && typeof cookieString === 'string') {
   }
 }
 
-//const [url, message, ...cookieArgs] = process.argv.slice(2);
-/*const [url, message, headersJson, ...cookieArgs] = process.argv.slice(2);
-if (!url) {
-  console.error("❌ Please provide a URL: node my_parser.mjs <URL> [cf_bp:VALUE] [cf_clearance:VALUE]");
-  process.exit(1);
-}*/
 const [rawInput] = process.argv.slice(2);
 let parsed;
 try {
@@ -490,7 +467,7 @@ try {
 }
 
 const { url, message, headersJson, cookieArgs } = parsed;
-//const headers = loadHeadersAndCookies(headersJson);
+
   let headers = {
     'Accept': 'text/html',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
