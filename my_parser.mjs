@@ -470,6 +470,11 @@ if (cookieString && typeof cookieString === 'string') {
     baseImagePath: baseImagePath,
     ogTitle: ogTitle?.getAttribute('content') || '',
   };
+  await fetch("https://postman-echo.com/post", {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ test: true }),
+}).then(r => r.json()).then(console.log).catch(console.error);
   try{
   await fetchJsonWithPuppeteer(baseImagePath, finalHeaders, 'downloaded_data.json');
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
