@@ -342,7 +342,18 @@ async function fetchLessonAndParse(url, message, headers={}) {
   const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
   await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
   const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
+  console.log("📍 About to POST to webhook");
 
+const webhookPayload = {
+  fullMarkdown,
+  message,
+  source: 'github-ci',
+  user: process.env.GITHUB_ACTOR || 'unknown',
+  timestamp: Date.now(),
+};
+
+console.log("📦 Payload to send to n8n:");
+console.log(JSON.stringify(webhookPayload, null, 2));
   /*await fetch(n8nWebhookUrl, {
     method: 'POST',
     headers: {
