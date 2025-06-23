@@ -123,13 +123,70 @@ async function fetchJsonWithPuppeteer(url, headers, fileName) {
 
 async function fetchLessonAndParse(url, message, headers={}) {
   // const res = await fetch(url);
-  const res = await fetch(url, {
+  /*const res = await fetch(url, {
     method: 'GET',
     headers
   });
   if (!res.ok) throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`);
   const json = await res.json();
   const structuredContent = [];
+  const title = `# ${json.summary.title}\n`;
+  const summary = `${json.summary.description}\n---\n`;
+  structuredContent.push(["SlateHTML", title + summary]);*/
+  const cookieFromEnv = process.env.SECURE_COOKIE || '';
+  const mergedCookie = headers['Cookie'] || headers['cookie'] || cookieFromEnv;
+
+  const finalHeaders = {
+    ...headers,
+    Cookie: mergedCookie,
+    'User-Agent': headers['User-Agent'] || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+    Accept: 'application/json'
+  };
+
+  console.log('📡 Fetching lesson JSON...');
+  console.log('🔗 URL:', url);
+  console.log('🧠 Headers:', JSON.stringify(finalHeaders, null, 2));
+
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'GET',
+      headers: finalHeaders
+    });
+  } catch (err) {
+    console.error('❌ Network error:', err.message);
+    throw new Error('Network failure when fetching lesson JSON.');
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`❌ Failed to fetch: ${res.status} ${res.statusText}`);
+    console.error('🧾 Response preview:\n', text.slice(0, 500));
+
+    // Optionally send webhook with failure status
+    try {
+      await fetch(n8nWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          status: `lesson_fetch_failed_${res.status}`,
+          reason: text.slice(0, 500),
+          source: 'github-ci',
+          user: process.env.GITHUB_ACTOR || 'unknown',
+          timestamp: Date.now(),
+        })
+      });
+    } catch (whErr) {
+      console.error('❌ Failed to send webhook about the failure:', whErr.message);
+    }
+
+    throw new Error(`Lesson fetch failed with status ${res.status}`);
+  }
+
+  const json = await res.json();
+  const structuredContent = [];
+
   const title = `# ${json.summary.title}\n`;
   const summary = `${json.summary.description}\n---\n`;
   structuredContent.push(["SlateHTML", title + summary]);
@@ -345,7 +402,7 @@ async function fetchLessonAndParse(url, message, headers={}) {
     if (!markdownContent.endsWith("\n")) markdownContent += "\n";
     structuredContent.push([x.type, markdownContent]);
   }
-  const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
+  /*const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
   //await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
     const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
 
@@ -362,6 +419,35 @@ async function fetchLessonAndParse(url, message, headers={}) {
       timestamp: Date.now(),
     })
   });
+  return fullMarkdown;
+}*/
+ const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
+
+  // ✅ Webhook: send final parsed markdown
+  try {
+    const response = await fetch(n8nWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fullMarkdown,
+        message,
+        source: 'github-ci',
+        user: process.env.GITHUB_ACTOR || 'unknown',
+        timestamp: Date.now()
+      })
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error(`❌ Webhook POST failed: ${response.status}`);
+      console.error(text);
+    } else {
+      console.log(`✅ Webhook delivered: ${response.status}`);
+    }
+  } catch (err) {
+    console.error('❌ Error sending webhook:', err.message);
+  }
+
   return fullMarkdown;
 }
 
