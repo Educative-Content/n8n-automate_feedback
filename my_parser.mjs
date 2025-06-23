@@ -165,7 +165,7 @@ async function fetchLessonAndParse(url, message, headers={}) {
 
     // Optionally send webhook with failure status
     try {
-      await fetch(n8nWebhookUrl, {
+      await fetch("https://daniaahmad13.app.n8n.cloud/webhook/scrape-result", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
