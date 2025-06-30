@@ -48,8 +48,7 @@ jobs:
       - name: 🧠 Encode message
         id: encode
         run: |
-          echo "message64=$(echo "${{ inputs.arg2 }}" | base64 -w 0)" >> $GITHUB_OUTPUT
-          message = "$(echo '${{ steps.encode.outputs.message64 }}' | base64 -d)"
+          echo "message=$(echo "${{ inputs.arg2 }}" | base64 -w 0)" >> $GITHUB_OUTPUT
           
 
       - name: 🏃 Run scraper script
@@ -60,6 +59,7 @@ jobs:
           echo '${{ inputs.cred }}' > headers.json
 
           echo "🔗 Running parser for: ${{ inputs.arg1 }}"
+          message=$(echo '${{ steps.decode.outputs.message }}' | base64 -d)
           OUTPUT=$(node parser.mjs "${{ inputs.arg1 }}" "$message")
 
           echo "✅ Scraping complete. Markdown output below:"
