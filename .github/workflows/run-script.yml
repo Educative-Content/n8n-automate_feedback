@@ -41,16 +41,17 @@ jobs:
           
       - name: 📦 Install dependencies and manually install Chromium
         run: |
-          echo "📦 Running npm install (skip Chromium)..."
-          npm install
+              npm ci
+              npx playwright install chromium
+          #echo "📦 Running npm install (skip Chromium)..."
+          #npm install
 
-          echo "⬇️ Installing Chromium manually for Puppeteer..."
-          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD= node node_modules/puppeteer/install.js
-          echo "✅ Chromium installed and install step complete"
-        env:
-          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+          #echo "⬇️ Installing Chromium manually for Puppeteer..."
+          #PUPPETEER_SKIP_CHROMIUM_DOWNLOAD= node node_modules/puppeteer/install.js
+          #echo "✅ Chromium installed and install step complete"
+        #env:
+          #PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
           
-
       - name: 🏃 Run scraper script
         env:
           SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
