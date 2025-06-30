@@ -55,9 +55,7 @@ jobs:
           INPUT_JSON=$(jq -n \
           --arg url "${{ inputs.arg1 }}" \
           --arg message "$(echo '${{ steps.encode.outputs.message64 }}' | base64 -d)" \
-          --arg headersJson '${{ inputs.cred }}' \
-          --arg cookieArgs "$SECURE_COOKIE" \
-          '{url: $url, message: $message, headersJson: $headersJson, cookieString: $cookieArgs}')
+          '{url: $url, message: $message}')
 
           # Ensure JSON is valid
           echo "Loaded Headers JSON:"
@@ -65,5 +63,5 @@ jobs:
           echo "$INPUT_JSON" | jq .
 
           # Run the scraper script with headers JSON and cookies separately
-          # OUTPUT=$(node ./my_parser.mjs "$INPUT_JSON")
+          # OUTPUT=$(node ./parser.mjs "$INPUT_JSON")
           echo "$OUTPUT" > lesson_output.md
