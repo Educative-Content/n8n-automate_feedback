@@ -48,7 +48,7 @@ jobs:
       - name: 🧠 Encode message
         id: encode
         run: |
-          echo "message=$(echo "${{ inputs.arg2 }}" | base64 -w 0)" >> $GITHUB_OUTPUT
+          message=$(echo '${{ inputs.arg2 }}' | base64 -w 0)" >> $GITHUB_OUTPUT
           
 
       - name: 🏃 Run scraper script
