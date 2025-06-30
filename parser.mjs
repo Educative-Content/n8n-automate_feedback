@@ -71,7 +71,7 @@ function fixLatex(text) {
   return `$$${text.replace(/\\/g, '\\').replace(/\n/g, '')}$$\n`;
 }
 
-async function fetchLessonAndParse(url) {
+async function fetchLessonAndParse(url, message) {
   let headers = { 'Accept': 'application/json' };
   try {
     const headerJson = await readFile('headers.json', 'utf-8');
@@ -344,7 +344,7 @@ async function fetchJsonWithPuppeteer(url, headers, fileName) {
   return parsed;
 }
 
-async function scrapeWithAuth(url) {
+async function scrapeWithAuth(url, message) {
   const headers = await loadHeaders();
 
   const browser = await puppeteer.launch({
@@ -388,20 +388,20 @@ async function scrapeWithAuth(url) {
   const slug = findSlugByTitle(data, metadata.title);
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
   console.log(fullPageUrl);
-  const markdown = await fetchLessonAndParse(fullPageUrl);
+  const markdown = await fetchLessonAndParse(fullPageUrl, message);
   return markdown;
 }
 
 // CLI usage
-const url = process.argv[2];
+/*const url = process.argv[2];
 if (!url) {
   console.error("❌ Please provide a URL: node scrape_with_auth.js <URL>");
   process.exit(1);
 }
 
-/*scrapeWithAuth(url).catch(err => {
+scrapeWithAuth(url).catch(err => {
   console.error("❌ Scraping failed:", err.message);
-});*/
+});
 scrapeWithAuth(url)
   .then(markdown => {
     console.log("✅ Scraping completed. Here's the Markdown:\n");
@@ -409,4 +409,23 @@ scrapeWithAuth(url)
   })
   .catch(err => {
     console.error("❌ Scraping failed:", err.message);
-  });
+  });*/
+
+const [rawInput] = process.argv.slice(2);
+let parsed;
+try {
+  parsed = JSON.parse(rawInput);
+} catch (e) {
+  console.error("❌ Could not parse JSON input:", e.message);
+  process.exit(1);
+}
+
+const { url, message} = parsed;
+scrapeWithAuth(url, message)
+  .then(markdown => {
+    console.log("✅ Scraping completed. Here's the Markdown:\n");
+    console.log(markdown); // ✅ This logs everything
+  })
+  .catch(err => {
+    console.error("❌ Scraping failed:", err.message);
+  })
