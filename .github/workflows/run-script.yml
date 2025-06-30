@@ -64,6 +64,7 @@ jobs:
           # echo "$HEADERS_JSON"
           echo "$INPUT_JSON" | jq .
 
+          npx puppeteer browsers install chrome
           # Run the scraper script with headers JSON and cookies separately
           OUTPUT=$(node ./parser.mjs "$INPUT_JSON")
           echo "$OUTPUT"
