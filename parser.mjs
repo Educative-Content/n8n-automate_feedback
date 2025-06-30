@@ -417,14 +417,8 @@ scrapeWithAuth(url)
     console.error("❌ Scraping failed:", err.message);
   });*/
 
-const [rawInput] = process.argv.slice(2);
-let parsed;
-try {
-  parsed = JSON.parse(rawInput);
-} catch (e) {
-  console.error("❌ Could not parse JSON input:", e.message);
-  process.exit(1);
-}
+const url = process.argv[2];
+const message = process.argv[3];
 
 const { url, message} = parsed;
 scrapeWithAuth(url, message)
