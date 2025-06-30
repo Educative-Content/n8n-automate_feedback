@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer';
-import puppeteerExtra from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+//import puppeteerExtra from 'puppeteer-extra';
+//import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { readFile, writeFile } from 'fs/promises';
 import { JSDOM } from 'jsdom';
 import TurndownService from 'turndown';
@@ -9,7 +9,7 @@ import dotenv from 'dotenv';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
-puppeteerExtra.use(StealthPlugin());
+//puppeteerExtra.use(StealthPlugin());
 dotenv.config(); // Enables .env support for local dev
 
 async function loadHeaders() {
@@ -328,10 +328,9 @@ async function fetchLessonAndParse(url, message) {
 }
 
 async function fetchJsonWithPuppeteer(url, headers, fileName) {
-  const browser = await puppeteerExtra.launch({
-    executablePath: '/usr/bin/google-chrome-stable',
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  const browser = await puppeteer.launch({
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
   const page = await browser.newPage();
   await page.setExtraHTTPHeaders(headers);
@@ -351,10 +350,9 @@ async function fetchJsonWithPuppeteer(url, headers, fileName) {
 async function scrapeWithAuth(url, message) {
   const headers = await loadHeaders();
 
-  const browser = await puppeteerExtra.launch({
-    executablePath: '/usr/bin/google-chrome-stable',
-    headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  const browser = await puppeteer.launch({
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
   const page = await browser.newPage();
