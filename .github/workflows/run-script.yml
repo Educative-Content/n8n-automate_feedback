@@ -1,4 +1,5 @@
 name: Run Scraper Script
+
 on:
   workflow_dispatch:
     inputs:
@@ -8,7 +9,7 @@ on:
         type: string
 
       arg2:
-        description: 'message'
+        description: 'Message (not used by parser)'
         required: true
         type: string
 
@@ -16,15 +17,16 @@ on:
         description: 'Headers JSON (including cookies)'
         required: true
         type: string
+
 jobs:
   run-script:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: 🧾 Checkout repo
         uses: actions/checkout@v3
 
-      - name: Cache node_modules
+      - name: ⚡ Cache node_modules
         uses: actions/cache@v3
         with:
           path: |
@@ -32,39 +34,30 @@ jobs:
             node_modules
           key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
 
-      - name: Install dependencies
-        run: npm install
-        env:
-            PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+      - name: 📦 Install dependencies and manually install Chromium
+        run: |
+          echo "📦 Running npm install (skip Chromium)..."
+          npm install
 
-      - name: Encode message
+          echo "⬇️ Installing Chromium manually for Puppeteer..."
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD= npx puppeteer browsers install chrome
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+
+      - name: 🧠 Encode message
         id: encode
         run: |
           echo "message64=$(echo "${{ inputs.arg2 }}" | base64 -w 0)" >> $GITHUB_OUTPUT
-          
-      - name: Run scraper script
+
+      - name: 🏃 Run scraper script
         env:
-            SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
+          SECURE_COOKIE: "__cf_bp=${{ secrets.CF_BP }}; cf_clearance=${{ secrets.CF_CLEARANCE }}"
         run: |
-          echo "Running with ${{ inputs.arg1 }} $SECURE_COOKIE"
+          echo "🛠️ Writing headers.json"
+          echo '${{ inputs.cred }}' > headers.json
 
-          # Correctly save the JSON string as valid JSON
-          # echo '${{ inputs.cred }}' | jq -c '.' > headers.json
-          # HEADERS_JSON=$(cat headers.json)
-          #HEADERS_JSON=$(echo '${{ inputs.cred }}' | jq -c '.')
-          INPUT_JSON=$(jq -n \
-          --arg url "${{ inputs.arg1 }}" \
-          --arg message "$(echo '${{ steps.encode.outputs.message64 }}' | base64 -d)" \
-          --arg headersJson '${{ inputs.cred }}' \
-          --arg cookieArgs "$SECURE_COOKIE" \
-          '{url: $url, message: $message}')
+          echo "🔗 Running parser for: ${{ inputs.arg1 }}"
+          OUTPUT=$(node parser.mjs "${{ inputs.arg1 }}")
 
-          # Ensure JSON is valid
-          echo "Loaded Headers JSON:"
-          # echo "$HEADERS_JSON"
-          echo "$INPUT_JSON" | jq .
-
-          npx puppeteer browsers install chrome
-          # Run the scraper script with headers JSON and cookies separately
-          OUTPUT=$(node ./parser.mjs "$INPUT_JSON")
+          echo "✅ Scraping complete. Markdown output below:"
           echo "$OUTPUT"
