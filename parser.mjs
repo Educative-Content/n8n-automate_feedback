@@ -305,6 +305,7 @@ async function fetchLessonAndParse(url) {
   await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
   //console.log('Markdown saved to lesson_output.md');
   console.log(await readFile('lesson_output.md', 'utf-8'));
+  console.log(fullMarkdown);
   return fullMarkdown;
 }
 
