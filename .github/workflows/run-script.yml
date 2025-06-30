@@ -37,7 +37,7 @@ jobs:
       - name: 🧠 Encode message
         id: encode
         run: |
-          message=$(echo '${{ inputs.arg2 }}' | base64 -w 0)
+          echo "message64=$(echo "${{ inputs.arg2 }}" | base64 -w 0)" >> $GITHUB_OUTPUT
           
       - name: 📦 Install dependencies and manually install Chromium
         run: |
@@ -59,7 +59,7 @@ jobs:
           echo '${{ inputs.cred }}' > headers.json
 
           echo "🔗 Running parser for: ${{ inputs.arg1 }}"
-          message=$(echo '${{ steps.decode.outputs.message }}' | base64 -d)
+          message=$(echo '${{ steps.decode.outputs.message64 }}' | base64 -d)
           OUTPUT=$(node parser.mjs "${{ inputs.arg1 }}" "$message")
 
           echo "✅ Scraping complete. Markdown output below:"
