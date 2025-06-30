@@ -306,6 +306,21 @@ async function fetchLessonAndParse(url) {
   //console.log('Markdown saved to lesson_output.md');
   //console.log(await readFile('lesson_output.md', 'utf-8'));
   console.log(fullMarkdown);
+  const n8nWebhookUrl = "https://daniaahmad13.app.n8n.cloud/webhook/scrape-result"; // or pass as an argument
+
+  await fetch(n8nWebhookUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      fullMarkdown,
+      message,
+      source: 'github-ci',
+      user: process.env.GITHUB_ACTOR || 'unknown',
+      timestamp: Date.now(),
+    })
+  });
   return fullMarkdown;
 }
 
