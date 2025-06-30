@@ -302,9 +302,9 @@ async function fetchLessonAndParse(url) {
   }
 
   const fullMarkdown = structuredContent.map(item => item[1]).join('\n');
-  await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
+  //await writeFile('lesson_output.md', fullMarkdown, 'utf-8');
   //console.log('Markdown saved to lesson_output.md');
-  console.log(await readFile('lesson_output.md', 'utf-8'));
+  //console.log(await readFile('lesson_output.md', 'utf-8'));
   console.log(fullMarkdown);
   return fullMarkdown;
 }
@@ -373,8 +373,8 @@ async function scrapeWithAuth(url) {
   const slug = findSlugByTitle(data, metadata.title);
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
   console.log(fullPageUrl);
-  await fetchLessonAndParse(fullPageUrl);
-  return metadata;
+  const markdown = await fetchLessonAndParse(fullPageUrl);
+  return markdown;
 }
 
 // CLI usage
@@ -384,6 +384,14 @@ if (!url) {
   process.exit(1);
 }
 
-scrapeWithAuth(url).catch(err => {
+/*scrapeWithAuth(url).catch(err => {
   console.error("❌ Scraping failed:", err.message);
-});
+});*/
+scrapeWithAuth(url)
+  .then(markdown => {
+    console.log("✅ Scraping completed. Here's the Markdown:\n");
+    console.log(markdown); // ✅ This logs everything
+  })
+  .catch(err => {
+    console.error("❌ Scraping failed:", err.message);
+  });
