@@ -40,7 +40,7 @@ jobs:
           npm install
 
           echo "⬇️ Installing Chromium manually for Puppeteer..."
-          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD= npx puppeteer install
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD= node node_modules/puppeteer/install.js
         env:
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
 
