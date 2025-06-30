@@ -59,7 +59,7 @@ jobs:
           echo '${{ inputs.cred }}' > headers.json
 
           echo "🔗 Running parser for: ${{ inputs.arg1 }}"
-          message=$(echo '${{ steps.decode.outputs.message64 }}' | base64 -d)
+          message=$(echo '${{ steps.encode.outputs.message64 }}' | base64 -d)
           OUTPUT=$(node parser.mjs "${{ inputs.arg1 }}" "$message")
 
           echo "✅ Scraping complete. Markdown output below:"
