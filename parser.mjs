@@ -1,4 +1,6 @@
-import { chromium } from 'playwright';
+import puppeteer from 'puppeteer';
+//import puppeteerExtra from 'puppeteer-extra';
+//import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { readFile, writeFile } from 'fs/promises';
 import { JSDOM } from 'jsdom';
 import TurndownService from 'turndown';
@@ -7,32 +9,33 @@ import dotenv from 'dotenv';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
-dotenv.config();
-
-const turndownService = new TurndownService();
-turndownService.addRule('headers', {
-  filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-  replacement: function (content, node) {
-    const hLevel = Number(node.nodeName.charAt(1));
-    return `${'#'.repeat(hLevel)} ${content}`;
-  }
-});
+//puppeteerExtra.use(StealthPlugin());
+dotenv.config(); // Enables .env support for local dev
 
 async function loadHeaders() {
   const filePath = join(process.cwd(), 'headers.json');
+
+  console.log("🔍 Looking for headers.json at:", filePath);
+  console.log("🧾 File exists:", existsSync(filePath));
+
   let headers = { Accept: 'text/html' };
+
   try {
     const raw = await readFile(filePath, 'utf-8');
     const fileHeaders = JSON.parse(raw);
     headers = { ...headers, ...fileHeaders };
+    console.log("✅ headers.json loaded and merged.");
   } catch (err) {
-    console.warn("Could not load headers.json. Proceeding with default headers.");
+    console.warn("⚠️ Could not load headers.json. Falling back.");
+    console.error("🛑 Error details:", err.message);
   }
-  if (process.env.CF_BP) {
+if (process.env.CF_BP) {
     headers['cf_bp'] = process.env.CF_BP;
+    console.log('🔐 Using secure cf_bp header from environment.');
   }
-  return headers;
+return headers;
 }
+
 
 function findSlugByTitle(jsonData, targetTitle) {
   for (const category of jsonData.instance.details.toc.categories) {
@@ -45,9 +48,16 @@ function findSlugByTitle(jsonData, targetTitle) {
   return null; // Not found
 }
 
+const turndownService = new TurndownService();
 
 // Optional: Configure ATX-style headers
-
+turndownService.addRule('headers', {
+  filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+  replacement: function (content, node) {
+    const hLevel = Number(node.nodeName.charAt(1));
+    return `${'#'.repeat(hLevel)} ${content}`;
+  }
+});
 
 function convertKatexToMarkdown(html) {
   const dom = new JSDOM(html);
@@ -317,28 +327,38 @@ async function fetchLessonAndParse(url, message) {
   return fullMarkdown;
 }
 
-async function fetchJsonWithPlaywright(url, headers, fileName) {
-  const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ extraHTTPHeaders: headers });
-  const page = await context.newPage();
-  await page.goto(url, { waitUntil: 'networkidle' });
+async function fetchJsonWithPuppeteer(url, headers, fileName) {
+  const browser = await puppeteer.launch({
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+  const page = await browser.newPage();
+  await page.setExtraHTTPHeaders(headers);
+
+  await page.goto(url, { waitUntil: 'networkidle0' });
 
   const rawJson = await page.evaluate(() => document.body.innerText);
+
   await browser.close();
 
   const parsed = JSON.parse(rawJson);
   await writeFile(fileName, JSON.stringify(parsed, null, 2), 'utf-8');
+  //console.log('📥JSON saved to '+fileName);
   return parsed;
 }
 
 async function scrapeWithAuth(url, message) {
   const headers = await loadHeaders();
 
-  const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ extraHTTPHeaders: headers });
-  const page = await context.newPage();
+  const browser = await puppeteer.launch({
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
 
-  await page.goto(url, { waitUntil: 'networkidle' });
+  const page = await browser.newPage();
+
+  await page.setExtraHTTPHeaders(headers);
+  await page.goto(url, { waitUntil: 'networkidle0' });
 
   await page.evaluate(() => {
     document.querySelectorAll('details').forEach(el => el.open = true);
@@ -367,7 +387,7 @@ async function scrapeWithAuth(url, message) {
     ogTitle: ogTitle?.getAttribute('content') || '',
   };
 
-  await fetchJsonWithPlaywright(baseImagePath, headers, 'downloaded_data.json');
+  await fetchJsonWithPuppeteer(baseImagePath, headers, 'downloaded_data.json');
   const data = JSON.parse(await readFile('downloaded_data.json', 'utf-8'));
   const slug = findSlugByTitle(data, metadata.title);
   const fullPageUrl = `${baseImagePath}/page/${slug}`;
