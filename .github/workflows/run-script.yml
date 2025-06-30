@@ -65,3 +65,4 @@ jobs:
           # Run the scraper script with headers JSON and cookies separately
           # OUTPUT=$(node ./parser.mjs "$INPUT_JSON")
           echo "$OUTPUT" > lesson_output.md
+          echo "$OUTPUT"
