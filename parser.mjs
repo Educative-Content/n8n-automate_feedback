@@ -418,6 +418,7 @@ scrapeWithAuth(url)
 const url = process.argv[2];
 const message = process.argv[3];
 
+console.log("🧪 Message:", message);
 //const { url, message} = parsed;
 scrapeWithAuth(url, message)
   .then(markdown => {
