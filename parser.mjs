@@ -420,7 +420,7 @@ scrapeWithAuth(url)
 const url = process.argv[2];
 const message = process.argv[3];
 
-const { url, message} = parsed;
+//const { url, message} = parsed;
 scrapeWithAuth(url, message)
   .then(markdown => {
     console.log("✅ Scraping completed. Here's the Markdown:\n");
