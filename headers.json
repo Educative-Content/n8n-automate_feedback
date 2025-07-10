@@ -1,1 +1,20 @@
-
+{
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+    "priority": "u=0, i",
+    "sec-ch-ua": "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Google Chrome\";v=\"134\"",
+    "sec-ch-ua-arch": "\"arm\"",
+    "sec-ch-ua-bitness": "\"64\"",
+    "sec-ch-ua-full-version": "\"134.0.6998.45\"",
+    "sec-ch-ua-full-version-list": "\"Chromium\";v=\"134.0.6998.45\", \"Not:A-Brand\";v=\"24.0.0.0\", \"Google Chrome\";v=\"134.0.6998.45\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-model": "\"\"",
+    "sec-ch-ua-platform": "\"macOS\"",
+    "sec-ch-ua-platform-version": "\"15.3.2\"",
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": "none",
+    "sec-fetch-user": "?1",
+    "upgrade-insecure-requests": "1",
+    "cookie": "__cf_bm=oMmWcfmkdFoCkdIfUCVxI3KVb5bYtzFJojAXkfg6vOo-1750671186-1.0.1.1-Cxk2BoBxDXsFsIU1q0h9W6ABLMjAlkE9abUybpoiD4_Wp8yU72G2s7wOTXDWywrXPmyI4.TnS1okdvhHLeU_W5cFk5e2sUFWHo5aaPh8j4g; enterprise_nav=false; theme=light; use_system_preference=personal; _fbp=fb.1.1750671191721.868733717575467867; _clck=1nmalka%7C2%7Cfx0%7C0%7C2000; usprivacy=1---; __hstc=10449898.1a1efc69bcdc73fecb6087cb460768c7.1750671192365.1750671192365.1750671192365.1; hubspotutk=1a1efc69bcdc73fecb6087cb460768c7; __hssrc=1; OneTrustWPCCPAGoogleOptOut=false; _ga=GA1.1.1915311574.1750671193; FPID=FPID2.2.mavFEc%2FH6tKCbF6PoOZb1z2y4V2s3ztrpL5LSGm4QKo%3D.1750671193; FPLC=376Xml0kKRT%2B8e%2Fy7ZmX75d%2F2%2FVqrR1Nq4KlmyB0JhN5fjtpdIOQxME0RyQaM8xZ2z8R%2FWuCk3nrnpQMa1MA8Fcpv02sSNrfWYVpKmjAdKsw49vwqAyKuI0aDzgeCg%3D%3D; logged_in=; editor-auth=eyJ1c2VyX2lkIjogIjUyNTI0NzE3NTAzOTM4NTYiLCAidG9rZW4iOiAiV3V5RkViOGZJUjVsT1VIQkZIeU82byIsICJ0b2tlbl90cyI6IDE3NTA2NzEyNDcwMDB9; _rdt_uuid=1750671191697.2145ee64-2a6d-4c2a-a6a6-90d4b7898188; enterprise_new_sidebar=true; trial_availed=false; subscribed=true; l2c_subscribed=false; flask-auth=.eJyLNjUyNTIxNzQ3NTC2NLYwNdMx0FEKcjH1ynFzzPDPMkrLsgjP9ErL8S42UgJKASVzEzMSc_USc7MSUxxSU0qTE0syy1L1MvOVoFIKYCklnZKi0lSdtMSc4lSdvNKcHB1jCAWyyczc0MjEIhYAumwlaQ; _uetsid=14fd8be0501511f09521015616e6dc9a; _uetvid=14fd9970501511f0ad2e51ddd2c24f47; __hssc=10449898.2.1750671192365; OptanonConsent=isGpcEnabled=0&datestamp=Mon+Jun+23+2025+14%3A34%3A10+GMT%2B0500+(Pakistan+Standard+Time)&version=202505.1.0&browserGpcFlag=0&isIABGlobal=false&hosts=&consentId=a96b4111-3136-4d71-bf02-04d512228685&interactionCount=0&isAnonUser=1&landingPath=https%3A%2F%2Fwww.educative.io%2F&groups=C0001%3A1%2CC0002%3A1%2CC0003%3A1%2CC0004%3A1; recommendations=false; cache_token=1750671254-FZtxuiMHsZyMl3XvENb8AZ0/LPKyFzN1udav5XK0YsQ%3D; _clsk=fbcrh3%7C1750671254660%7C2%7C1%7Cn.clarity.ms%2Fcollect; _ga_MWGSGCW5SP=GS2.1.s1750671192$o1$g1$t1750671254$j60$l0$h2037923722; FPGSID=1.1750671193.1750671255.G-MWGSGCW5SP.EyADXKrhgeDw1Z7QKoEXDw; magicbox-auth=eyJ1c2VyX2lkIjogNTI1MjQ3MTc1MDM5Mzg1NiwgInRva2VuIjogIlpDYnhQdFJWbjFncktyS09NdndieGUiLCAidG9rZW5fdHMiOiAxNzUwNjcxMjU2MDAwLCAibG91X3Nlc3Npb24iOiBmYWxzZX0=|79a4655ea04ea46c26c61cd07e0f21a2bc09d312; secure-auth=WzUyNTI0NzE3NTAzOTM4NTYsIDAsICJSRDVKbEZBaE9qMmZqOFdpSmZsS3MyIiwgMCwgMCwgIm1haGFtLmFtamFkQGVkdWNhdGl2ZS5pbyIsICJtYWhhbSBhbWphZCIsIHRydWUsIGZhbHNlLCBudWxsLCAzLCBudWxsLCAxNzUwNjcxMjQ4XQ==|1027e2907a15f770687d35f571c322b4e36f7b52&mac=1750671256-7WRpplwaT4PlZvdXAghBi8tXxO4jm5SlKfZboRGJ3q8%3D; flask-session=.eJwtzr0OgjAUBeBXMXduCBQKyKSJccDBxMXBmKaBC5S0hfTHxfjuIjid4UvOOW_gM1otDBoPlbcBCfDg0EL1YJTRrEgKFqf7tGQ5iQncTqxW5-NwHWk3lndZd-riKCy0oBaD0JHQo2gP2IZGePnCSE7wp91KQNaZTiiHxASlSLrFbykvEpqVTwJO9ibM3E3BNggVLB3OTTx4vd38fAFAUDt4.aFkfmA.NJnOZ8qCaIOwZ81ZcID3Okqi-YM"
+}
